@@ -37,12 +37,27 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 		det = &detector.PythonDetector{}
 	case "node", "nodejs":
 		det = &detector.NodeDetector{}
+	case "go", "golang":
+		det = &detector.GoDetector{}
+	case "docker":
+		det = &detector.DockerDetector{}
+	case "mysql", "mariadb":
+		det = &detector.MySQLDetector{}
+	case "redis":
+		det = &detector.RedisDetector{}
+	case "nginx":
+		det = &detector.NginxDetector{}
 	default:
 		fmt.Printf("❌ Runtime '%s' is not supported yet.\n", runtimeName)
 		fmt.Println("\nSupported runtimes:")
 		fmt.Println("  - java")
 		fmt.Println("  - python")
 		fmt.Println("  - node")
+		fmt.Println("  - go")
+		fmt.Println("  - docker")
+		fmt.Println("  - mysql")
+		fmt.Println("  - redis")
+		fmt.Println("  - nginx")
 		return
 	}
 

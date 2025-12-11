@@ -6,5 +6,10 @@ func GetAllDetectors() []Detector {
 		&JavaDetector{},
 		&PythonDetector{},
 		&NodeDetector{},
+		&GoDetector{},
+		&DockerDetector{},
+		&MySQLDetector{},
+		&RedisDetector{},
+		&NginxDetector{},
 	}
 }
