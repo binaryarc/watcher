@@ -1,40 +1,49 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
-*/
 package get
 
 import (
 	"fmt"
 
+	"github.com/binaryarc/watcher/internal/detector"
 	"github.com/spf13/cobra"
 )
 
-// runtimeCmd represents the runtime command
 var runtimeCmd = &cobra.Command{
-	Use:   "runtime",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("runtime called")
-	},
+	Use:   "runtime [name]",
+	Short: "Get specific runtime version",
+	Long:  `Get version information for a specific runtime (java, python, node, go, etc.)`,
+	Args:  cobra.ExactArgs(1),
+	Run:   runGetRuntime,
 }
 
 func init() {
-	rootCmd.AddCommand(runtimeCmd)
+	GetCmd.AddCommand(runtimeCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func runGetRuntime(cmd *cobra.Command, args []string) {
+	runtimeName := args[0]
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// runtimeCmd.PersistentFlags().String("foo", "", "A help for foo")
+	fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// runtimeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	if runtimeName != "java" {
+		fmt.Printf("❌ Runtime '%s' is not supported yet.\n", runtimeName)
+		fmt.Println("Supported runtimes: java")
+		return
+	}
+
+	javaDetector := &detector.JavaDetector{}
+	runtime, err := javaDetector.Detect()
+	if err != nil {
+		fmt.Printf("❌ Error detecting %s: %v\n", runtimeName, err)
+		return
+	}
+
+	if !runtime.Found {
+		fmt.Printf("❌ %s is not installed on this system.\n", runtime.Name)
+		return
+	}
+
+	fmt.Printf("✅ %s detected!\n\n", runtime.Name)
+	fmt.Printf("Name:    %s\n", runtime.Name)
+	fmt.Printf("Version: %s\n", runtime.Version)
+	fmt.Printf("Path:    %s\n", runtime.Path)
 }
