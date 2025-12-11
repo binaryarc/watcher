@@ -108,3 +108,18 @@ __debug_bin
 # GoReleaser
 .goreleaser.yml.bak
 dist/
+
+
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+wctl
+watcher-server
+
+# Build
+/bin/
+/dist/
