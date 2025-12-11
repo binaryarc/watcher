@@ -24,14 +24,25 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
 
-	if runtimeName != "java" {
+	var det detector.Detector
+
+	switch runtimeName {
+	case "java":
+		det = &detector.JavaDetector{}
+	case "python":
+		det = &detector.PythonDetector{}
+	case "node", "nodejs":
+		det = &detector.NodeDetector{}
+	default:
 		fmt.Printf("❌ Runtime '%s' is not supported yet.\n", runtimeName)
-		fmt.Println("Supported runtimes: java")
+		fmt.Println("\nSupported runtimes:")
+		fmt.Println("  - java")
+		fmt.Println("  - python")
+		fmt.Println("  - node")
 		return
 	}
 
-	javaDetector := &detector.JavaDetector{}
-	runtime, err := javaDetector.Detect()
+	runtime, err := det.Detect()
 	if err != nil {
 		fmt.Printf("❌ Error detecting %s: %v\n", runtimeName, err)
 		return
