@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/binaryarc/watcher/internal/detector"
+	"github.com/binaryarc/watcher/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -54,7 +55,5 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("✅ %s detected!\n\n", runtime.Name)
-	fmt.Printf("Name:    %s\n", runtime.Name)
-	fmt.Printf("Version: %s\n", runtime.Version)
-	fmt.Printf("Path:    %s\n", runtime.Path)
+	output.PrintRuntimeTable(runtime)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/binaryarc/watcher/internal/detector"
+	"github.com/binaryarc/watcher/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ func runGetRuntimes(cmd *cobra.Command, args []string) {
 	fmt.Println("👁️  Observing all runtimes...\n")
 
 	detectors := detector.GetAllDetectors()
-	foundCount := 0
+	var runtimes []*detector.Runtime
 
 	for _, det := range detectors {
 		runtime, err := det.Detect()
@@ -31,19 +32,16 @@ func runGetRuntimes(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if !runtime.Found {
-			continue
+		if runtime.Found {
+			runtimes = append(runtimes, runtime)
 		}
-
-		foundCount++
-		fmt.Printf("✅ %s\n", runtime.Name)
-		fmt.Printf("   Version: %s\n", runtime.Version)
-		fmt.Printf("   Path:    %s\n\n", runtime.Path)
 	}
 
-	if foundCount == 0 {
+	if len(runtimes) == 0 {
 		fmt.Println("❌ No runtimes detected on this system.")
-	} else {
-		fmt.Printf("📊 Total: %d runtime(s) detected\n", foundCount)
+		return
 	}
+
+	output.PrintRuntimesTable(runtimes)
+	fmt.Printf("\n📊 Total: %d runtime(s) detected\n", len(runtimes))
 }
