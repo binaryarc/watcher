@@ -20,7 +20,11 @@ func init() {
 }
 
 func runGetRuntimes(cmd *cobra.Command, args []string) {
-	fmt.Println("👁️  Observing all runtimes...\n")
+	outputFormat, _ := cmd.Flags().GetString("output")
+
+	if outputFormat == "table" {
+		fmt.Println("👁️  Observing all runtimes...\n")
+	}
 
 	detectors := detector.GetAllDetectors()
 	var runtimes []*detector.Runtime
@@ -28,7 +32,9 @@ func runGetRuntimes(cmd *cobra.Command, args []string) {
 	for _, det := range detectors {
 		runtime, err := det.Detect()
 		if err != nil {
-			fmt.Printf("⚠️  Error detecting %s: %v\n", det.Name(), err)
+			if outputFormat == "table" {
+				fmt.Printf("⚠️  Error detecting %s: %v\n", det.Name(), err)
+			}
 			continue
 		}
 
@@ -38,10 +44,27 @@ func runGetRuntimes(cmd *cobra.Command, args []string) {
 	}
 
 	if len(runtimes) == 0 {
-		fmt.Println("❌ No runtimes detected on this system.")
+		if outputFormat == "table" {
+			fmt.Println("❌ No runtimes detected on this system.")
+		}
 		return
 	}
 
-	output.PrintRuntimesTable(runtimes)
-	fmt.Printf("\n📊 Total: %d runtime(s) detected\n", len(runtimes))
+	// 출력 형식에 따라 분기
+	switch outputFormat {
+	case "json":
+		if err := output.PrintRuntimesJSON(runtimes); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	case "yaml":
+		if err := output.PrintRuntimesYAML(runtimes); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	case "table":
+		output.PrintRuntimesTable(runtimes)
+		fmt.Printf("\n📊 Total: %d runtime(s) detected\n", len(runtimes))
+	default:
+		fmt.Printf("Unknown output format: %s\n", outputFormat)
+		fmt.Println("Supported formats: table, json, yaml")
+	}
 }

@@ -22,8 +22,11 @@ func init() {
 
 func runGetRuntime(cmd *cobra.Command, args []string) {
 	runtimeName := args[0]
+	outputFormat, _ := cmd.Flags().GetString("output")
 
-	fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
+	if outputFormat == "table" {
+		fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
+	}
 
 	var det detector.Detector
 
@@ -50,10 +53,27 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 	}
 
 	if !runtime.Found {
-		fmt.Printf("❌ %s is not installed on this system.\n", runtime.Name)
+		if outputFormat == "table" {
+			fmt.Printf("❌ %s is not installed on this system.\n", runtime.Name)
+		}
 		return
 	}
 
-	fmt.Printf("✅ %s detected!\n\n", runtime.Name)
-	output.PrintRuntimeTable(runtime)
+	// 출력 형식에 따라 분기
+	switch outputFormat {
+	case "json":
+		if err := output.PrintRuntimeJSON(runtime); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	case "yaml":
+		if err := output.PrintRuntimeYAML(runtime); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	case "table":
+		fmt.Printf("✅ %s detected!\n\n", runtime.Name)
+		output.PrintRuntimeTable(runtime)
+	default:
+		fmt.Printf("Unknown output format: %s\n", outputFormat)
+		fmt.Println("Supported formats: table, json, yaml")
+	}
 }
