@@ -1,0 +1,49 @@
+package get
+
+import (
+	"fmt"
+
+	"github.com/binaryarc/watcher/internal/detector"
+	"github.com/spf13/cobra"
+)
+
+var runtimesCmd = &cobra.Command{
+	Use:   "runtimes",
+	Short: "Get all detected runtimes",
+	Long:  `Scan and display all detected runtime versions on the system`,
+	Run:   runGetRuntimes,
+}
+
+func init() {
+	GetCmd.AddCommand(runtimesCmd)
+}
+
+func runGetRuntimes(cmd *cobra.Command, args []string) {
+	fmt.Println("👁️  Observing all runtimes...\n")
+
+	detectors := detector.GetAllDetectors()
+	foundCount := 0
+
+	for _, det := range detectors {
+		runtime, err := det.Detect()
+		if err != nil {
+			fmt.Printf("⚠️  Error detecting %s: %v\n", det.Name(), err)
+			continue
+		}
+
+		if !runtime.Found {
+			continue
+		}
+
+		foundCount++
+		fmt.Printf("✅ %s\n", runtime.Name)
+		fmt.Printf("   Version: %s\n", runtime.Version)
+		fmt.Printf("   Path:    %s\n\n", runtime.Path)
+	}
+
+	if foundCount == 0 {
+		fmt.Println("❌ No runtimes detected on this system.")
+	} else {
+		fmt.Printf("📊 Total: %d runtime(s) detected\n", foundCount)
+	}
+}
