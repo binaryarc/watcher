@@ -1,9 +1,11 @@
 package get
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/binaryarc/watcher/internal/detector"
+	"github.com/binaryarc/watcher/internal/grpcclient"
 	"github.com/binaryarc/watcher/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -18,12 +20,61 @@ var runtimeCmd = &cobra.Command{
 
 func init() {
 	GetCmd.AddCommand(runtimeCmd)
+	runtimeCmd.Flags().String("host", "", "Remote server address (e.g., server:9090)")
 }
 
 func runGetRuntime(cmd *cobra.Command, args []string) {
 	runtimeName := args[0]
 	outputFormat, _ := cmd.Flags().GetString("output")
+	host, _ := cmd.Flags().GetString("host")
 
+	var runtime *detector.Runtime
+	var err error
+
+	// Remote vs Local detection
+	if host != "" {
+		// Remote observation via gRPC
+		runtime, err = observeRemoteRuntime(host, runtimeName, outputFormat)
+		if err != nil {
+			fmt.Printf("❌ Failed to observe remote server: %v\n", err)
+			return
+		}
+	} else {
+		// Local detection
+		runtime, err = observeLocalRuntime(runtimeName, outputFormat)
+		if err != nil {
+			return
+		}
+	}
+
+	if runtime == nil || !runtime.Found {
+		if outputFormat == "table" {
+			fmt.Printf("❌ %s is not installed.\n", runtimeName)
+		}
+		return
+	}
+
+	// Output formatting
+	switch outputFormat {
+	case "json":
+		if err := output.PrintRuntimeJSON(runtime); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	case "yaml":
+		if err := output.PrintRuntimeYAML(runtime); err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	case "table":
+		fmt.Printf("✅ %s detected!\n\n", runtime.Name)
+		output.PrintRuntimeTable(runtime)
+	default:
+		fmt.Printf("Unknown output format: %s\n", outputFormat)
+		fmt.Println("Supported formats: table, json, yaml")
+	}
+}
+
+// observeLocalRuntime performs local runtime detection for specific runtime
+func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Runtime, error) {
 	if outputFormat == "table" {
 		fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
 	}
@@ -58,37 +109,37 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 		fmt.Println("  - mysql")
 		fmt.Println("  - redis")
 		fmt.Println("  - nginx")
-		return
+		return nil, fmt.Errorf("unsupported runtime: %s", runtimeName)
 	}
 
 	runtime, err := det.Detect()
 	if err != nil {
 		fmt.Printf("❌ Error detecting %s: %v\n", runtimeName, err)
-		return
+		return nil, err
 	}
 
-	if !runtime.Found {
-		if outputFormat == "table" {
-			fmt.Printf("❌ %s is not installed on this system.\n", runtime.Name)
-		}
-		return
+	return runtime, nil
+}
+
+// observeRemoteRuntime fetches specific runtime info from remote server via gRPC
+func observeRemoteRuntime(host string, runtimeName string, outputFormat string) (*detector.Runtime, error) {
+	if outputFormat == "table" {
+		fmt.Printf("🌐 Connecting to remote server: %s...\n\n", host)
 	}
 
-	// 출력 형식에 따라 분기
-	switch outputFormat {
-	case "json":
-		if err := output.PrintRuntimeJSON(runtime); err != nil {
-			fmt.Printf("Error: %v\n", err)
-		}
-	case "yaml":
-		if err := output.PrintRuntimeYAML(runtime); err != nil {
-			fmt.Printf("Error: %v\n", err)
-		}
-	case "table":
-		fmt.Printf("✅ %s detected!\n\n", runtime.Name)
-		output.PrintRuntimeTable(runtime)
-	default:
-		fmt.Printf("Unknown output format: %s\n", outputFormat)
-		fmt.Println("Supported formats: table, json, yaml")
+	// Create gRPC client
+	client, err := grpcclient.NewClient(host)
+	if err != nil {
+		return nil, err
 	}
+	defer client.Close()
+
+	// Fetch specific runtime
+	ctx := context.Background()
+	runtime, err := client.ObserveRuntime(ctx, runtimeName)
+	if err != nil {
+		return nil, err
+	}
+
+	return runtime, nil
 }
