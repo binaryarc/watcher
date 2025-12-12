@@ -1,0 +1,270 @@
+package compare
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"sync"
+
+	"github.com/binaryarc/watcher/internal/detector"
+	"github.com/binaryarc/watcher/internal/grpcclient"
+	"github.com/binaryarc/watcher/internal/output"
+	"github.com/spf13/cobra"
+)
+
+var runtimesCmd = &cobra.Command{
+	Use:   "runtimes",
+	Short: "Compare runtime versions across multiple servers",
+	Long: `Compare runtime versions across multiple servers to identify version inconsistencies.
+
+This command queries multiple servers in parallel and displays a comparison table
+showing which runtimes have different versions across your infrastructure.`,
+	Run: runCompareRuntimes,
+}
+
+func init() {
+	CompareCmd.AddCommand(runtimesCmd)
+	runtimesCmd.Flags().StringSlice("hosts", []string{}, "Comma-separated list of server addresses (required)")
+	runtimesCmd.MarkFlagRequired("hosts")
+}
+
+// ServerRuntimes holds runtime information for a single server
+type ServerRuntimes struct {
+	Host     string
+	Runtimes map[string]*detector.Runtime // key: runtime name
+	Error    error
+}
+
+func runCompareRuntimes(cmd *cobra.Command, args []string) {
+	hosts, _ := cmd.Flags().GetStringSlice("hosts")
+	outputFmt, _ := cmd.Flags().GetString("output")
+
+	if len(hosts) == 0 {
+		fmt.Println("❌ Error: --hosts flag is required")
+		fmt.Println("Example: wctl compare runtimes --hosts server1:9090,server2:9090")
+		return
+	}
+
+	if outputFmt == "table" {
+		fmt.Printf("🌐 Comparing runtimes across %d server(s)...\n\n", len(hosts))
+	}
+
+	// Fetch runtimes from all servers in parallel
+	serverResults := fetchAllServers(hosts, outputFmt)
+
+	// Check for errors
+	var successfulServers []ServerRuntimes
+	for _, result := range serverResults {
+		if result.Error != nil {
+			if outputFmt == "table" {
+				fmt.Printf("⚠️  Failed to connect to %s: %v\n", result.Host, result.Error)
+			}
+		} else {
+			successfulServers = append(successfulServers, result)
+		}
+	}
+
+	if len(successfulServers) == 0 {
+		fmt.Println("\n❌ Failed to connect to all servers")
+		return
+	}
+
+	if outputFmt == "table" && len(successfulServers) < len(hosts) {
+		fmt.Println()
+	}
+
+	// Build comparison data
+	comparison := buildComparison(successfulServers)
+
+	// Output based on format
+	switch outputFmt {
+	case "json":
+		if err := output.PrintComparisonJSON(comparison); err != nil {
+			fmt.Printf("Error printing JSON: %v\n", err)
+		}
+	case "yaml":
+		if err := output.PrintComparisonYAML(comparison); err != nil {
+			fmt.Printf("Error printing YAML: %v\n", err)
+		}
+	case "table":
+		output.PrintComparisonTable(comparison)
+		printSummary(comparison)
+	default:
+		fmt.Printf("Unknown output format: %s\n", outputFmt)
+	}
+}
+
+// fetchAllServers fetches runtime info from all servers in parallel
+func fetchAllServers(hosts []string, outputFmt string) []ServerRuntimes {
+	var wg sync.WaitGroup
+	results := make([]ServerRuntimes, len(hosts))
+
+	for i, host := range hosts {
+		wg.Add(1)
+		go func(index int, hostAddr string) {
+			defer wg.Done()
+
+			// Connect to server
+			client, err := grpcclient.NewClient(hostAddr)
+			if err != nil {
+				results[index] = ServerRuntimes{
+					Host:  hostAddr,
+					Error: err,
+				}
+				return
+			}
+			defer client.Close()
+
+			// Fetch runtimes
+			ctx := context.Background()
+			runtimes, err := client.ObserveRuntimes(ctx)
+			if err != nil {
+				results[index] = ServerRuntimes{
+					Host:  hostAddr,
+					Error: err,
+				}
+				return
+			}
+
+			// Convert to map for easier lookup
+			runtimeMap := make(map[string]*detector.Runtime)
+			for _, rt := range runtimes {
+				runtimeMap[rt.Name] = rt
+			}
+
+			results[index] = ServerRuntimes{
+				Host:     hostAddr,
+				Runtimes: runtimeMap,
+				Error:    nil,
+			}
+		}(i, host)
+	}
+
+	wg.Wait()
+	return results
+}
+
+// buildComparison builds the comparison data structure
+func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
+	// Collect all unique runtime names
+	runtimeNames := make(map[string]bool)
+	for _, server := range serverResults {
+		if server.Error == nil { // 성공한 서버만
+			for name := range server.Runtimes {
+				runtimeNames[name] = true
+			}
+		}
+	}
+
+	// Build comparison for each runtime
+	var runtimeComparisons []output.RuntimeComparison
+	for name := range runtimeNames {
+		versions := make([]string, len(serverResults))
+		for i, server := range serverResults {
+			if server.Error != nil {
+				versions[i] = "ERROR" // 연결 실패 표시
+			} else if rt, found := server.Runtimes[name]; found {
+				versions[i] = rt.Version
+			} else {
+				versions[i] = "-"
+			}
+		}
+
+		// Determine status
+		status := determineStatus(versions)
+
+		runtimeComparisons = append(runtimeComparisons, output.RuntimeComparison{
+			Name:     name,
+			Versions: versions,
+			Status:   status,
+		})
+	}
+
+	// Extract host names (모든 서버 포함, 실패한 것도)
+	hosts := make([]string, len(serverResults))
+	for i, server := range serverResults {
+		// Extract just the hostname (without port) for display
+		hostParts := strings.Split(server.Host, ":")
+		if server.Error != nil {
+			hosts[i] = hostParts[0] + " (ERR)"
+		} else {
+			hosts[i] = hostParts[0]
+		}
+	}
+
+	return &output.ComparisonData{
+		Hosts:    hosts,
+		Runtimes: runtimeComparisons,
+	}
+}
+
+// determineStatus determines if versions are same, different, or partial
+func determineStatus(versions []string) string {
+	if len(versions) == 0 {
+		return "UNKNOWN"
+	}
+
+	// Count non-empty versions
+	nonEmptyVersions := make(map[string]int)
+	emptyCount := 0
+	errorCount := 0
+
+	for _, v := range versions {
+		if v == "-" {
+			emptyCount++
+		} else if v == "ERROR" {
+			errorCount++
+		} else {
+			nonEmptyVersions[v]++
+		}
+	}
+
+	// Has errors
+	if errorCount > 0 {
+		return "ERROR"
+	}
+
+	// All missing
+	if emptyCount == len(versions) {
+		return "MISSING"
+	}
+
+	// Some missing (partial)
+	if emptyCount > 0 {
+		return "PARTIAL"
+	}
+
+	// All same version
+	if len(nonEmptyVersions) == 1 {
+		return "SAME"
+	}
+
+	// Different versions
+	return "DIFF"
+}
+
+// printSummary prints a summary of the comparison
+func printSummary(comparison *output.ComparisonData) {
+	sameCount := 0
+	diffCount := 0
+	partialCount := 0
+
+	for _, rt := range comparison.Runtimes {
+		switch rt.Status {
+		case "SAME":
+			sameCount++
+		case "DIFF":
+			diffCount++
+		case "PARTIAL":
+			partialCount++
+		}
+	}
+
+	fmt.Println("\n📊 Summary:")
+	fmt.Printf("   • %d server(s) compared\n", len(comparison.Hosts))
+	fmt.Printf("   • %d runtime(s) with differences\n", diffCount)
+	if partialCount > 0 {
+		fmt.Printf("   • %d runtime(s) partially installed\n", partialCount)
+	}
+	fmt.Printf("   • %d runtime(s) consistent\n", sameCount)
+}

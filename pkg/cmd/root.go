@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/binaryarc/watcher/pkg/cmd/compare"
 	"github.com/binaryarc/watcher/pkg/cmd/get"
 	"github.com/spf13/cobra"
 )
@@ -24,4 +25,5 @@ func init() {
 
 	rootCmd.PersistentFlags().StringP("output", "o", "table", "Output format (table|json|yaml)")
 	rootCmd.AddCommand(get.GetCmd)
+	rootCmd.AddCommand(compare.CompareCmd)
 }
