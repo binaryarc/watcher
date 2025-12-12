@@ -24,9 +24,11 @@ vendor/
 /bin/
 /dist/
 /build/
-watcher
-watcher-server
-watcher-client
+
+# Binary files (루트 디렉토리의 바이너리만)
+/wctl
+/watcher-server
+/watcher-client
 
 # IDE specific files
 .idea/
@@ -58,10 +60,11 @@ certs/
 *.log
 logs/
 
-# Generated files
-*.pb.go
-*.pb.gw.go
-*_grpc.pb.go
+# Generated files (proto 디렉토리 제외)
+# proto 디렉토리의 .pb.go는 커밋해야 함 (다른 곳은 제외)
+# *.pb.go
+# *.pb.gw.go
+# *_grpc.pb.go
 
 # Temporary files
 tmp/
@@ -70,13 +73,8 @@ temp/
 
 # OS generated files
 Thumbs.db
-.DS_Store
 .AppleDouble
 .LSOverride
-
-# Protoc generated
-proto/*.pb.go
-proto/*.pb.gw.go
 
 # Test cache
 .cache/
@@ -100,26 +98,9 @@ site/
 *.pprof
 
 # Air (live reload) temporary files
-tmp/
 
 # Delve debugger
 __debug_bin
 
 # GoReleaser
 .goreleaser.yml.bak
-dist/
-
-
-# Binaries
-*.exe
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-wctl
-watcher-server
-
-# Build
-/bin/
-/dist/
