@@ -13,6 +13,7 @@ Watcher (`wctl`) is a lightweight system observation tool inspired by Marvel's W
 ## Features
 
 - 🔍 **Runtime Detection**: Automatically detect installed runtime versions
+- 🌐 **Remote Observation**: Query runtime information from remote servers via gRPC
 - 📊 **Multiple Output Formats**: Table (default), JSON, and YAML
 - 🚀 **Fast & Lightweight**: Single binary, no dependencies
 - 🎯 **kubectl-style UX**: Familiar commands for DevOps users
@@ -39,6 +40,7 @@ Watcher (`wctl`) is a lightweight system observation tool inspired by Marvel's W
 ### Prerequisites
 
 - Go 1.21 or higher
+- Protocol Buffers compiler (for development only)
 
 ### From Source
 ```bash
@@ -46,29 +48,35 @@ Watcher (`wctl`) is a lightweight system observation tool inspired by Marvel's W
 git clone https://github.com/binaryarc/watcher.git
 cd watcher
 
-# Build
-go build -o wctl ./cmd/wctl
+# Build client and server
+make build
 
-# Optional: Install to GOPATH
-go install ./cmd/wctl
+# Or build individually
+go build -o wctl ./cmd/wctl
+go build -o watcher-server ./cmd/watcher-server
 ```
 
 ### Using Go Install
 ```bash
+# Install client
 go install github.com/binaryarc/watcher/cmd/wctl@latest
+
+# Install server
+go install github.com/binaryarc/watcher/cmd/watcher-server@latest
 ```
 
 ## Quick Start
 
-### Get All Runtimes
+### Local Observation
 ```bash
-# Table format (default)
+# Get all runtimes on local machine
 wctl get runtimes
 
-# JSON format
-wctl get runtimes -o json
+# Get specific runtime
+wctl get runtime java
 
-# YAML format
+# Different output formats
+wctl get runtimes -o json
 wctl get runtimes -o yaml
 ```
 
@@ -89,31 +97,51 @@ wctl get runtimes -o yaml
 📊 Total: 5 runtime(s) detected
 ```
 
-### Get Specific Runtime
+### Remote Observation
+
+#### Step 1: Start Watcher Server
 ```bash
-# Query specific runtime
-wctl get runtime java
-wctl get runtime python
-wctl get runtime docker
+# On the remote server (or locally for testing)
+watcher-server serve
 
-# With different output formats
-wctl get runtime go -o json
-wctl get runtime node -o yaml
+# Custom port
+watcher-server serve --port 8080
+
+# Custom host and port
+watcher-server serve --host 0.0.0.0 --port 9090
 ```
 
-**Example Output:**
+**Server Output:**
 ```
-👁️  Observing java runtime...
+🚀 Watcher server listening on 0.0.0.0:9090
+📡 Ready to accept observation requests...
+```
 
-✅ java detected!
+#### Step 2: Query Remote Server
+```bash
+# Get all runtimes from remote server
+wctl get runtimes --host server.example.com:9090
 
-┌──────────┬─────────────────────────────────────────────┐
-│ PROPERTY │                    VALUE                    │
-├──────────┼─────────────────────────────────────────────┤
-│ Name     │ java                                        │
-│ Version  │ 17.0.16                                     │
-│ Path     │ /usr/lib/jvm/java-17-openjdk-amd64/bin/java │
-└──────────┴─────────────────────────────────────────────┘
+# Get specific runtime from remote server
+wctl get runtime java --host 192.168.1.100:9090
+
+# JSON output from remote
+wctl get runtimes --host localhost:9090 -o json
+```
+
+**Example Remote Output:**
+```
+🌐 Connecting to remote server: server.example.com:9090...
+
+┌─────────┬─────────┬──────────────────────────────────────────────────┐
+│ RUNTIME │ VERSION │                       PATH                       │
+├─────────┼─────────┼──────────────────────────────────────────────────┤
+│ java    │ 11.0.19 │ /usr/bin/java                                    │
+│ python  │ 3.9.16  │ /usr/bin/python3                                 │
+│ docker  │ 24.0.7  │ /usr/bin/docker                                  │
+└─────────┴─────────┴──────────────────────────────────────────────────┘
+
+📊 Total: 3 runtime(s) detected
 ```
 
 ## Usage
@@ -121,14 +149,43 @@ wctl get runtime node -o yaml
 ### Command Structure
 ```
 wctl [command] [subcommand] [flags]
+watcher-server [command] [flags]
 ```
 
-### Available Commands
+### Client Commands (wctl)
+
+#### Get Commands
 ```bash
-wctl get runtimes           # Get all detected runtimes
-wctl get runtime <name>     # Get specific runtime
+# Local observation
+wctl get runtimes                    # Get all runtimes
+wctl get runtime <name>              # Get specific runtime
+
+# Remote observation
+wctl get runtimes --host <address>   # Get all from remote server
+wctl get runtime <name> --host <address>  # Get specific from remote
+
+# Output formats
+wctl get runtimes -o table           # Table format (default)
+wctl get runtimes -o json            # JSON format
+wctl get runtimes -o yaml            # YAML format
+```
+
+#### Help Commands
+```bash
 wctl --help                 # Show help
 wctl get --help             # Show get command help
+```
+
+### Server Commands (watcher-server)
+```bash
+# Start server
+watcher-server serve                    # Start on default :9090
+watcher-server serve --port 8080        # Custom port
+watcher-server serve --host 0.0.0.0     # Custom host
+
+# Help
+watcher-server --help
+watcher-server serve --help
 ```
 
 ### Supported Runtime Names
@@ -142,43 +199,58 @@ wctl get --help             # Show get command help
 - `redis` - Redis
 - `nginx` - Nginx web server
 
-### Output Formats
-
-Use the `-o` or `--output` flag:
+### Real-World Examples
 ```bash
--o table    # ASCII table (default)
--o json     # JSON format
--o yaml     # YAML format
+# Check Java version across multiple servers
+wctl get runtime java --host prod-web-01:9090
+wctl get runtime java --host prod-web-02:9090
+wctl get runtime java --host prod-api-01:9090
+
+# Export inventory to JSON
+wctl get runtimes --host prod-web-01:9090 -o json > prod-web-01.json
+
+# Quick health check script
+for server in web-{01..05}; do
+  echo "=== $server ==="
+  wctl get runtimes --host $server.prod.local:9090 -o table
+done
+
+# Compare local vs production
+diff <(wctl get runtimes -o json) \
+     <(wctl get runtimes --host prod-web-01:9090 -o json)
 ```
 
-### Examples
-```bash
-# Check if Java is installed
-wctl get runtime java
-
-# Get all runtimes in JSON (useful for scripts)
-wctl get runtimes -o json | jq '.[] | select(.Name=="docker")'
-
-# Export to YAML file
-wctl get runtimes -o yaml > runtimes.yaml
-
-# Check multiple specific runtimes
-wctl get runtime java
-wctl get runtime python
-wctl get runtime docker
+## Architecture
+```
+┌─────────────┐                ┌──────────────────┐
+│   wctl      │                │ watcher-server   │
+│  (Client)   │────gRPC────────│   (Server)       │
+│             │    :9090       │                  │
+└─────────────┘                └──────────────────┘
+      │                                 │
+      │ Local Detection                 │ Local Detection
+      │                                 │
+      ▼                                 ▼
+┌─────────────┐                ┌──────────────────┐
+│   Local     │                │   Remote         │
+│   System    │                │   System         │
+└─────────────┘                └──────────────────┘
 ```
 
 ## Project Structure
 ```
 watcher/
 ├── cmd/
-│   └── wctl/              # CLI entry point
+│   ├── wctl/                  # CLI client entry point
+│   └── watcher-server/        # gRPC server entry point
 ├── pkg/
-│   └── cmd/               # Command implementations
-│       ├── root.go        # Root command
-│       └── get/           # Get command group
+│   └── cmd/                   # Command implementations
+│       ├── root.go            # Root command
+│       ├── get/               # Get command group
+│       └── serve/             # Server command group
 ├── internal/
-│   ├── detector/          # Runtime detection logic
+│   ├── detector/              # Runtime detection logic
+│   │   ├── detector.go        # Detector interface
 │   │   ├── java.go
 │   │   ├── python.go
 │   │   ├── nodejs.go
@@ -186,11 +258,21 @@ watcher/
 │   │   ├── docker.go
 │   │   ├── mysql.go
 │   │   ├── redis.go
-│   │   └── nginx.go
-│   └── output/            # Output formatters
-│       ├── table.go
-│       ├── json.go
-│       └── yaml.go
+│   │   ├── nginx.go
+│   │   └── registry.go        # Detector registry
+│   ├── output/                # Output formatters
+│   │   ├── table.go
+│   │   ├── json.go
+│   │   └── yaml.go
+│   ├── grpcserver/            # gRPC server implementation
+│   │   └── server.go
+│   └── grpcclient/            # gRPC client wrapper
+│       └── client.go
+├── proto/
+│   ├── watcher.proto          # Protocol Buffers definition
+│   ├── watcher.pb.go          # Generated code
+│   └── watcher_grpc.pb.go     # Generated gRPC code
+├── Makefile
 └── README.md
 ```
 
@@ -205,11 +287,53 @@ cd watcher
 # Install dependencies
 go mod download
 
-# Build
-go build -o wctl ./cmd/wctl
+# Build both binaries
+make build
 
-# Run tests
-go test ./...
+# Build individually
+go build -o wctl ./cmd/wctl
+go build -o watcher-server ./cmd/watcher-server
+```
+
+### Development Commands
+```bash
+# Build
+make build              # Build both binaries
+make build-verbose      # Build with verbose output
+
+# Generate proto files (after modifying .proto)
+make proto
+
+# Testing
+make test-local         # Test local observation
+make run-server         # Start server (terminal 1)
+make test-remote        # Test remote observation (terminal 2)
+
+# Clean
+make clean              # Remove built binaries
+
+# Help
+make help               # Show all available commands
+```
+
+### Testing Workflow
+
+**Terminal 1 (Server):**
+```bash
+make run-server
+```
+
+**Terminal 2 (Client):**
+```bash
+# Test local
+make test-local
+
+# Test remote
+make test-remote
+
+# Or manual testing
+./wctl get runtimes --host localhost:9090
+./wctl get runtime java --host localhost:9090 -o json
 ```
 
 ### Adding New Runtime Detector
@@ -241,29 +365,64 @@ func GetAllDetectors() []Detector {
 
 3. Update `runtime.go` switch case
 
+## Protocol
+
+### gRPC Service Definition
+```protobuf
+service WatcherService {
+  rpc ObserveRuntimes(ObserveRequest) returns (ObserveResponse);
+}
+
+message Runtime {
+  string name = 1;
+  string version = 2;
+  string path = 3;
+  bool found = 4;
+}
+
+message ObserveResponse {
+  repeated Runtime runtimes = 1;
+  SystemInfo system_info = 2;
+  int64 timestamp = 3;
+}
+```
+
 ## Roadmap
 
-### Current Phase: MVP - Local Detection ✅
+### Phase 1: Local Detection ✅ (Completed)
 
 - [x] Basic CLI structure
 - [x] Runtime detection (Java, Python, Node.js, Go, Docker, MySQL, Redis, Nginx)
 - [x] Multiple output formats (table, json, yaml)
 
-### Next Phase: Remote Observation
+### Phase 2: Remote Observation ✅ (Completed)
 
-- [ ] gRPC protocol definition
-- [ ] Server implementation (watcher-server)
-- [ ] Remote runtime detection
-- [ ] Multi-server comparison
+- [x] gRPC protocol definition
+- [x] Server implementation (watcher-server)
+- [x] Client implementation with --host flag
+- [x] Remote runtime detection
+
+### Phase 3: Multi-Server Comparison (Next)
+
+- [ ] `wctl compare runtimes --hosts server1:9090,server2:9090`
+- [ ] Side-by-side version comparison
+- [ ] Detect version mismatches across infrastructure
+
+### Phase 4: Security & Production Ready
+
 - [ ] TLS/mTLS support
+- [ ] Authentication and authorization
+- [ ] Connection pooling and retry logic
+- [ ] Rate limiting
 
 ### Future Enhancements
 
 - [ ] Service detection (systemd, docker containers)
 - [ ] Version history tracking
 - [ ] Security vulnerability detection
-- [ ] Configuration file support
+- [ ] Configuration file support (~/.watcher/config.yaml)
 - [ ] Web UI dashboard
+- [ ] Prometheus metrics export
 
 ## Why "Watcher"?
 
@@ -271,11 +430,49 @@ Inspired by Marvel's Watchers - cosmic beings who observe all events across the 
 
 - **Observe everything**: Monitor all your servers and runtimes
 - **Never interfere**: Read-only operations, zero system modifications
-- **Multiverse aware**: Designed for multi-server environments (coming soon)
+- **Multiverse aware**: Designed for multi-server environments
+
+## Use Cases
+
+### Infrastructure Audit
+```bash
+# Quick inventory of all servers
+for server in prod-{01..10}; do
+  wctl get runtimes --host $server:9090 -o json >> inventory.jsonl
+done
+```
+
+### Pre-Deployment Verification
+```bash
+# Ensure Java 17 before deploying Spring Boot 3.x
+wctl get runtime java --host prod-web-01:9090
+```
+
+### Compliance Checking
+```bash
+# Find servers running outdated Python versions
+wctl get runtime python --host server:9090 -o json | \
+  jq 'select(.Version | startswith("2."))'
+```
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Contribution Areas
+
+- New runtime detectors
+- Bug fixes and improvements
+- Documentation enhancements
+- Test coverage
+- Performance optimizations
+
+## Security
+
+- All communication uses gRPC (TLS support coming in Phase 4)
+- Read-only operations only
+- No sensitive data collection
+- No system modifications
 
 ## License
 
@@ -290,6 +487,7 @@ Built with ❤️ for DevOps and SRE professionals.
 - Inspired by kubectl's intuitive command structure
 - Built with [Cobra](https://github.com/spf13/cobra) and [Viper](https://github.com/spf13/viper)
 - Table output powered by [tablewriter](https://github.com/olekukonko/tablewriter)
+- gRPC communication via [grpc-go](https://github.com/grpc/grpc-go)
 
 ---
 
