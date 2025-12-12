@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package watcher;
+
+option go_package = "github.com/binaryarc/watcher/proto";
+
+message Runtime {
+  string name = 1;
+  string version = 2;
+  string path = 3;
+  bool found = 4;
+}
+
+message SystemInfo {
+  string hostname = 1;
+  string os = 2;
+  string kernel = 3;
+}
+
+message ObserveRequest {
+  repeated string runtime_filter = 1;
+}
+
+message ObserveResponse {
+  repeated Runtime runtimes = 1;
+  SystemInfo system_info = 2;
+  int64 timestamp = 3;
+}
+
+service WatcherService {
+  rpc ObserveRuntimes(ObserveRequest) returns (ObserveResponse);
+}
