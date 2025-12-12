@@ -1,4 +1,4 @@
-.PHONY: proto build clean run-server test-local test-remote help
+.PHONY: proto build clean run-server test-local test-remote test-compare test-compare-json test-json test-yaml help
 
 # 기본 타겟
 all: build
@@ -57,6 +57,16 @@ test-remote:
 	@echo ""
 	@./wctl get runtime java --host localhost:9090
 
+# 멀티 서버 비교 테스트 (서버들이 실행중이어야 함)
+test-compare:
+	@echo "🔍 Testing multi-server comparison..."
+	@./wctl compare runtimes --hosts localhost:9090,localhost:9091
+
+# 멀티 서버 비교 - JSON 출력
+test-compare-json:
+	@echo "🔍 Testing comparison with JSON output..."
+	@./wctl compare runtimes --hosts localhost:9090,localhost:9091 -o json
+
 # JSON 출력 테스트
 test-json:
 	@echo "📄 Testing JSON output..."
@@ -77,6 +87,7 @@ help:
 	@echo "  make run-server      - Start watcher server on :9090"
 	@echo "  make test-local      - Test local runtime observation"
 	@echo "  make test-remote     - Test remote runtime observation (needs server)"
+	@echo "  make test-compare    - Test multi-server comparison (needs servers)"  # 👈 추가
 	@echo "  make test-json       - Test JSON output format"
 	@echo "  make test-yaml       - Test YAML output format"
 	@echo "  make help            - Show this help message"

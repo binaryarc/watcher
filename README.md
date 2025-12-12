@@ -14,6 +14,7 @@ Watcher (`wctl`) is a lightweight system observation tool inspired by Marvel's W
 
 - 🔍 **Runtime Detection**: Automatically detect installed runtime versions
 - 🌐 **Remote Observation**: Query runtime information from remote servers via gRPC
+- 🔄 **Multi-Server Comparison**: Compare runtime versions across multiple servers  # 👈 추가
 - 📊 **Multiple Output Formats**: Table (default), JSON, and YAML
 - 🚀 **Fast & Lightweight**: Single binary, no dependencies
 - 🎯 **kubectl-style UX**: Familiar commands for DevOps users
@@ -144,6 +145,39 @@ wctl get runtimes --host localhost:9090 -o json
 📊 Total: 3 runtime(s) detected
 ```
 
+### Multi-Server Comparison
+
+Compare runtime versions across multiple servers to identify inconsistencies:
+```bash
+# Compare runtimes across multiple servers
+wctl compare runtimes --hosts server1:9090,server2:9090,server3:9090
+
+# JSON output
+wctl compare runtimes --hosts localhost:9090,prod-server:9090 -o json
+
+# YAML output
+wctl compare runtimes --hosts server1:9090,server2:9090 -o yaml
+```
+
+**Example Output:**
+```
+🌐 Comparing runtimes across 3 server(s)...
+
+┌─────────┬───────────┬───────────┬───────────┬─────────────┐
+│ RUNTIME │ SERVER-1  │ SERVER-2  │ SERVER-3  │   STATUS    │
+├─────────┼───────────┼───────────┼───────────┼─────────────┤
+│ java    │ 11.0.19   │ 11.0.19   │ 17.0.8    │ ⚠️  DIFF     │
+│ python  │ 3.9.16    │ 3.9.16    │ 3.9.16    │ ✅ SAME     │
+│ docker  │ 24.0.5    │ 24.0.7    │ -         │ ⚠️  PARTIAL │
+└─────────┴───────────┴───────────┴───────────┴─────────────┘
+
+📊 Summary:
+   • 3 server(s) compared
+   • 2 runtime(s) with differences
+   • 1 runtime(s) partially installed
+   • 0 runtime(s) consistent
+```
+
 ## Usage
 
 ### Command Structure
@@ -186,6 +220,16 @@ watcher-server serve --host 0.0.0.0     # Custom host
 # Help
 watcher-server --help
 watcher-server serve --help
+```
+
+#### Compare Commands
+```bash
+# Compare runtimes across multiple servers
+wctl compare runtimes --hosts ,,
+
+# With output formats
+wctl compare runtimes --hosts server1:9090,server2:9090 -o json
+wctl compare runtimes --hosts server1:9090,server2:9090 -o yaml
 ```
 
 ### Supported Runtime Names
@@ -402,11 +446,11 @@ message ObserveResponse {
 - [x] Client implementation with --host flag
 - [x] Remote runtime detection
 
-### Phase 3: Multi-Server Comparison (Next)
+### Phase 3: Multi-Server Comparison ✅ (Completed)
 
-- [ ] `wctl compare runtimes --hosts server1:9090,server2:9090`
-- [ ] Side-by-side version comparison
-- [ ] Detect version mismatches across infrastructure
+- [x] `wctl compare runtimes --hosts server1:9090,server2:9090`
+- [x] Side-by-side version comparison
+- [x] Detect version mismatches across infrastructure
 
 ### Phase 4: Security & Production Ready
 
@@ -433,6 +477,16 @@ Inspired by Marvel's Watchers - cosmic beings who observe all events across the 
 - **Multiverse aware**: Designed for multi-server environments
 
 ## Use Cases
+
+### Version Consistency Check
+```bash
+# Compare versions across production fleet
+wctl compare runtimes --hosts \
+  prod-web-01:9090,\
+  prod-web-02:9090,\
+  prod-web-03:9090 \
+  -o table
+```
 
 ### Infrastructure Audit
 ```bash
