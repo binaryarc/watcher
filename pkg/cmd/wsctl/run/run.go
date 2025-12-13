@@ -1,4 +1,4 @@
-package serve
+package run
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var RunCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "run",
 	Short: "Start Watcher gRPC server",
 	Long:  `Start the Watcher server to accept remote observation requests`,
@@ -30,10 +30,10 @@ var (
 )
 
 func init() {
-	RunCmd.Flags().IntVarP(&port, "port", "p", 9090, "Port to listen on")
-	RunCmd.Flags().StringVar(&host, "host", "0.0.0.0", "Host to bind to")
-	RunCmd.Flags().BoolVar(&disableAuth, "disable-auth", false, "Disable authentication (use for testing only)")
-	RunCmd.Flags().StringVar(&keystorePathArg, "keystore", "", "Path to keystore file (default: ~/.watcher/server/keys.json)")
+	Cmd.Flags().IntVarP(&port, "port", "p", 9090, "Port to listen on")
+	Cmd.Flags().StringVar(&host, "host", "0.0.0.0", "Host to bind to")
+	Cmd.Flags().BoolVar(&disableAuth, "disable-auth", false, "Disable authentication (use for testing only)")
+	Cmd.Flags().StringVar(&keystorePathArg, "keystore", "", "Path to keystore file (default: ~/.watcher/server/keys.json)")
 }
 
 func runServer(cmd *cobra.Command, args []string) {

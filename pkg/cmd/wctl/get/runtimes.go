@@ -18,7 +18,7 @@ var runtimesCmd = &cobra.Command{
 }
 
 func init() {
-	GetCmd.AddCommand(runtimesCmd)
+	Cmd.AddCommand(runtimesCmd)
 	runtimesCmd.Flags().String("host", "", "Remote server address (e.g., server:9090)")
 }
 
@@ -67,7 +67,8 @@ func runGetRuntimes(c *cobra.Command, args []string) {
 
 func observeLocalRuntimes(outputFormat string) []*detector.Runtime {
 	if outputFormat == "table" {
-		fmt.Println("Observing local runtimes...\n")
+		fmt.Println("Observing local runtimes...")
+		fmt.Println()
 	}
 
 	detectors := detector.GetAllDetectors()

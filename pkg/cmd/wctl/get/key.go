@@ -16,6 +16,10 @@ var keyCmd = &cobra.Command{
 	RunE:  runGetKey,
 }
 
+func init() {
+	Cmd.AddCommand(keyCmd)
+}
+
 func runGetKey(cmd *cobra.Command, args []string) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -30,7 +34,7 @@ func runGetKey(cmd *cobra.Command, args []string) error {
 
 	apiKey, err := manager.Load(keymanager.DefaultKeyName)
 	if err != nil {
-		return fmt.Errorf("no API key found\n\nGenerate a new key with:\n   wctl key generate")
+		return fmt.Errorf("no API key found\n\nGenerate a new key with:\n   wctl key gen")
 	}
 
 	fmt.Println(apiKey)

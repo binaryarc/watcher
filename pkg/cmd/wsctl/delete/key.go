@@ -1,22 +1,23 @@
-package serve
+package delete
 
 import (
 	"fmt"
 
+	"github.com/binaryarc/watcher/pkg/cmd/wsctl/common"
 	"github.com/spf13/cobra"
 )
 
-var (
-	keyName string
-)
-
-var deleteCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete resources",
 	Long:  `Delete API keys`,
 }
 
-var deleteKeyCmd = &cobra.Command{
+var (
+	keyName string
+)
+
+var keyCmd = &cobra.Command{
 	Use:   "key",
 	Short: "Delete an API key",
 	Long:  `Delete an existing API key by name`,
@@ -24,14 +25,13 @@ var deleteKeyCmd = &cobra.Command{
 }
 
 func init() {
-	deleteKeyCmd.Flags().StringVar(&keyName, "name", "", "API key to delete (required)")
-	deleteKeyCmd.MarkFlagRequired("name")
-
-	deleteCmd.AddCommand(deleteKeyCmd)
+	keyCmd.Flags().StringVar(&keyName, "name", "", "API key to delete (required)")
+	keyCmd.MarkFlagRequired("name")
+	Cmd.AddCommand(keyCmd)
 }
 
 func runDeleteKey(cmd *cobra.Command, args []string) error {
-	store, err := getKeyStore()
+	store, err := common.KeyStore()
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func runDeleteKey(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("API key removed successfully")
-	fmt.Printf("Key: %s\n", maskKey(keyName))
+	fmt.Printf("Key: %s\n", common.MaskKey(keyName))
 
 	return nil
 }

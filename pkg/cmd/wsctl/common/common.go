@@ -1,4 +1,4 @@
-package serve
+package common
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/binaryarc/watcher/internal/keystore"
 )
 
-func getKeyStore() (*keystore.Store, error) {
+func KeyStore() (*keystore.Store, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get home directory: %w", err)
@@ -23,7 +23,7 @@ func getKeyStore() (*keystore.Store, error) {
 	return keystore.NewStore(keystorePath)
 }
 
-func maskKey(key string) string {
+func MaskKey(key string) string {
 	if len(key) <= 14 {
 		return key
 	}

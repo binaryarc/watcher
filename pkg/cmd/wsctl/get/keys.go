@@ -1,20 +1,21 @@
-package serve
+package get
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/binaryarc/watcher/pkg/cmd/wsctl/common"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
-var getCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get resources",
 	Long:  `Get registered API keys`,
 }
 
-var getKeysCmd = &cobra.Command{
+var keysCmd = &cobra.Command{
 	Use:   "keys",
 	Short: "Get all registered API keys",
 	Long:  `List all registered API keys`,
@@ -22,11 +23,11 @@ var getKeysCmd = &cobra.Command{
 }
 
 func init() {
-	getCmd.AddCommand(getKeysCmd)
+	Cmd.AddCommand(keysCmd)
 }
 
 func runGetKeys(cmd *cobra.Command, args []string) error {
-	store, err := getKeyStore()
+	store, err := common.KeyStore()
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func runGetKeys(cmd *cobra.Command, args []string) error {
 
 	for _, keyInfo := range keys {
 		table.Append([]string{
-			maskKey(keyInfo.Key),
+			common.MaskKey(keyInfo.Key),
 			keyInfo.Description,
 			keyInfo.CreatedAt.Format("2006-01-02 15:04:05"),
 		})

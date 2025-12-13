@@ -1,18 +1,19 @@
-package serve
+package clear
 
 import (
 	"fmt"
 
+	"github.com/binaryarc/watcher/pkg/cmd/wsctl/common"
 	"github.com/spf13/cobra"
 )
 
-var clearCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "clear",
 	Short: "Clear resources",
 	Long:  `Clear all API keys`,
 }
 
-var clearKeysCmd = &cobra.Command{
+var keysCmd = &cobra.Command{
 	Use:   "keys",
 	Short: "Clear all API keys",
 	Long:  `Remove all registered API keys`,
@@ -20,11 +21,11 @@ var clearKeysCmd = &cobra.Command{
 }
 
 func init() {
-	clearCmd.AddCommand(clearKeysCmd)
+	Cmd.AddCommand(keysCmd)
 }
 
 func runClearKeys(cmd *cobra.Command, args []string) error {
-	store, err := getKeyStore()
+	store, err := common.KeyStore()
 	if err != nil {
 		return err
 	}

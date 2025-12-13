@@ -1,13 +1,13 @@
-package cmd
+package wctl
 
 import (
 	"os"
 	"path/filepath"
 
 	"github.com/binaryarc/watcher/internal/keymanager"
-	"github.com/binaryarc/watcher/pkg/cmd/compare"
-	"github.com/binaryarc/watcher/pkg/cmd/get"
-	"github.com/binaryarc/watcher/pkg/cmd/key"
+	"github.com/binaryarc/watcher/pkg/cmd/wctl/compare"
+	"github.com/binaryarc/watcher/pkg/cmd/wctl/get"
+	"github.com/binaryarc/watcher/pkg/cmd/wctl/key"
 	"github.com/spf13/cobra"
 )
 
@@ -23,8 +23,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
@@ -33,30 +32,25 @@ func init() {
 	rootCmd.PersistentFlags().StringP("output", "o", "table", "Output format (table|json|yaml)")
 	rootCmd.PersistentFlags().StringVar(&apiKey, "api-key", "", "API key for authentication")
 
-	rootCmd.AddCommand(get.GetCmd)
-	rootCmd.AddCommand(compare.CompareCmd)
-	rootCmd.AddCommand(key.KeyCmd)
+	rootCmd.AddCommand(get.Cmd)
+	rootCmd.AddCommand(compare.Cmd)
+	rootCmd.AddCommand(key.Cmd)
 }
 
-// loadAPIKey loads API key with priority: flag > env > file
 func loadAPIKey(cmd *cobra.Command, args []string) error {
-	// Skip for key commands
 	if cmd.Parent() != nil && cmd.Parent().Use == "key" {
 		return nil
 	}
 
-	// 1. Check if flag is set
 	if apiKey != "" {
 		return nil
 	}
 
-	// 2. Check environment variable
 	if envKey := os.Getenv("WATCHER_API_KEY"); envKey != "" {
 		apiKey = envKey
 		return nil
 	}
 
-	// 3. Try to load from default file
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil
@@ -77,7 +71,6 @@ func loadAPIKey(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// GetAPIKey returns the loaded API key
 func GetAPIKey() string {
 	return apiKey
 }

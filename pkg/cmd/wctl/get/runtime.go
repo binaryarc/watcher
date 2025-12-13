@@ -19,7 +19,7 @@ var runtimeCmd = &cobra.Command{
 }
 
 func init() {
-	GetCmd.AddCommand(runtimeCmd)
+	Cmd.AddCommand(runtimeCmd)
 	runtimeCmd.Flags().String("host", "", "Remote server address (e.g., server:9090)")
 }
 
@@ -96,7 +96,8 @@ func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Run
 		det = &detector.NginxDetector{}
 	default:
 		fmt.Printf("Runtime '%s' is not supported yet.\n", runtimeName)
-		fmt.Println("\nSupported runtimes:")
+		fmt.Println()
+		fmt.Println("Supported runtimes:")
 		fmt.Println("  - java")
 		fmt.Println("  - python")
 		fmt.Println("  - node")

@@ -9,22 +9,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// KeyCmd is the root command for key management
-var KeyCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "key",
 	Short: "Manage API key",
 	Long:  `Generate and view API key for authentication with watcher servers`,
 }
 
-var generateCmd = &cobra.Command{
-	Use:   "generate",
+var genCmd = &cobra.Command{
+	Use:   "gen",
 	Short: "Generate a new API key",
 	Long:  `Generate a new API key (replaces existing key)`,
 	RunE:  runGenerate,
 }
 
 func init() {
-	KeyCmd.AddCommand(generateCmd)
+	Cmd.AddCommand(genCmd)
 }
 
 func getKeyManager() (*keymanager.Manager, error) {

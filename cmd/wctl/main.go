@@ -1,11 +1,10 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package main
 
-import "github.com/binaryarc/watcher/pkg/cmd"
+import "github.com/binaryarc/watcher/pkg/cmd/wctl"
 
 func main() {
-	cmd.Execute()
+	wctl.Execute()
 }

@@ -89,6 +89,24 @@ wctl get runtimes
 wctl get runtime java
 ```
 
+Example output for `wctl get runtimes`:
+
+```
+Observing local runtimes...
+
+┌─────────┬─────────┬──────────────────────────────────────────┐
+│ RUNTIME │ VERSION │                   PATH                   │
+├─────────┼─────────┼──────────────────────────────────────────┤
+│ java    │ 17.0.17 │ /opt/java/bin/java                      │
+│ python  │ 3.10.12 │ /usr/bin/python3                        │
+│ node    │ 20.18.0 │ /opt/node/bin/node                      │
+│ go      │ 1.25.5  │ /usr/local/go/bin/go                    │
+│ docker  │ 27.5.1  │ /usr/bin/docker                         │
+└─────────┴─────────┴──────────────────────────────────────────┘
+
+Total: 5 runtime(s) detected
+```
+
 ### Remote runtime check
 
 On each target server:
@@ -121,7 +139,7 @@ Watcher uses shared API keys for every remote RPC.
 Generate and store a key:
 
 ```bash
-wctl key generate
+wctl key gen
 ```
 
 Print the currently saved key:

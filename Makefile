@@ -57,7 +57,7 @@ run-server-custom:
 # === 클라이언트 키 관리 테스트 ===
 test-key-gen:
 	@echo "Generating API key..."
-	./wctl key generate
+	./wctl key gen
 
 test-key-get:
 	@echo "Getting API key..."
@@ -72,7 +72,7 @@ test-server-keys-get:
 test-auth-setup:
 	@echo "Setting up authentication test..."
 	@echo "1. Generating client key..."
-	@./wctl key generate > /tmp/watcher_key.txt
+	@./wctl key gen > /tmp/watcher_key.txt
 	@echo ""
 	@echo "2. Extracting key..."
 	@API_KEY=$$(grep "watcher_" /tmp/watcher_key.txt | head -1 | xargs); \

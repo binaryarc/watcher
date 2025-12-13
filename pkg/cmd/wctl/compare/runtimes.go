@@ -13,6 +13,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var Cmd = &cobra.Command{
+	Use:   "compare",
+	Short: "Compare runtime versions across multiple servers",
+	Long: `Compare runtime versions across multiple servers to identify inconsistencies.
+
+Examples:
+  # Compare all runtimes across three servers
+  wctl compare runtimes --hosts server1:9090,server2:9090,server3:9090
+
+  # Compare with JSON output
+  wctl compare runtimes --hosts server1:9090,server2:9090 -o json`,
+}
+
 var runtimesCmd = &cobra.Command{
 	Use:   "runtimes",
 	Short: "Compare runtime versions across multiple servers",
@@ -24,7 +37,7 @@ showing which runtimes have different versions across your infrastructure.`,
 }
 
 func init() {
-	CompareCmd.AddCommand(runtimesCmd)
+	Cmd.AddCommand(runtimesCmd)
 	runtimesCmd.Flags().StringSlice("hosts", []string{}, "Comma-separated list of server addresses (required)")
 	runtimesCmd.MarkFlagRequired("hosts")
 }
@@ -198,60 +211,53 @@ func determineStatus(versions []string) string {
 		return "UNKNOWN"
 	}
 
-	nonEmptyVersions := make(map[string]int)
-	emptyCount := 0
-	errorCount := 0
-
-	for _, v := range versions {
-		if v == "x" {
-			emptyCount++
-		} else if v == "ERROR" {
-			errorCount++
-		} else {
-			nonEmptyVersions[v]++
+	baseVersion := ""
+	for _, version := range versions {
+		if version == "ERROR" {
+			return "UNKNOWN"
+		}
+		if version == "x" {
+			continue
+		}
+		if baseVersion == "" {
+			baseVersion = version
+			continue
+		}
+		if version != baseVersion {
+			return "MISMATCH"
 		}
 	}
 
-	if errorCount > 0 {
-		return "ERROR"
+	if baseVersion == "" {
+		return "UNKNOWN"
 	}
 
-	if emptyCount == len(versions) {
-		return "MISSING"
-	}
-
-	if emptyCount > 0 {
-		return "PARTIAL"
-	}
-
-	if len(nonEmptyVersions) == 1 {
-		return "SAME"
-	}
-
-	return "DIFF"
+	return "MATCH"
 }
 
 func printSummary(comparison *output.ComparisonData) {
-	sameCount := 0
-	diffCount := 0
-	partialCount := 0
+	fmt.Println()
+	fmt.Println("Summary:")
+	totalRuntimes := len(comparison.Runtimes)
+	mismatched := 0
+	unknown := 0
 
-	for _, rt := range comparison.Runtimes {
-		switch rt.Status {
-		case "SAME":
-			sameCount++
-		case "DIFF":
-			diffCount++
-		case "PARTIAL":
-			partialCount++
+	for _, runtime := range comparison.Runtimes {
+		switch runtime.Status {
+		case "MISMATCH":
+			mismatched++
+		case "UNKNOWN":
+			unknown++
 		}
 	}
 
-	fmt.Println("\nSummary:")
-	fmt.Printf("  %d server(s) compared\n", len(comparison.Hosts))
-	fmt.Printf("  %d runtime(s) with differences\n", diffCount)
-	if partialCount > 0 {
-		fmt.Printf("  %d runtime(s) partially installed\n", partialCount)
+	fmt.Printf("- Total runtimes compared: %d\n", totalRuntimes)
+	fmt.Printf("- Matching runtimes: %d\n", totalRuntimes-mismatched-unknown)
+	fmt.Printf("- Mismatched runtimes: %d\n", mismatched)
+	fmt.Printf("- Unknown status: %d\n", unknown)
+
+	if mismatched > 0 {
+		fmt.Println("\nRecommendation:")
+		fmt.Println("- Review mismatched runtimes and plan upgrades/downgrades to standardize versions.")
 	}
-	fmt.Printf("  %d runtime(s) consistent\n", sameCount)
 }

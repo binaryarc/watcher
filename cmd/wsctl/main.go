@@ -1,7 +1,7 @@
 package main
 
-import "github.com/binaryarc/watcher/pkg/cmd/serve"
+import "github.com/binaryarc/watcher/pkg/cmd/wsctl"
 
 func main() {
-	serve.Execute()
+	wsctl.Execute()
 }
