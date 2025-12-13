@@ -42,17 +42,17 @@ clean-all: clean
 # 서버 실행
 run-server:
 	@echo "Starting Watcher server..."
-	./watcher-server serve
+	./watcher-server run
 
 # 서버 실행 (인증 비활성화 - 테스트용)
 run-server-noauth:
 	@echo "Starting Watcher server (auth disabled)..."
-	./watcher-server serve --disable-auth
+	./watcher-server run --disable-auth
 
 # 서버 실행 (커스텀 포트)
 run-server-custom:
 	@echo "Starting Watcher server on port 8080..."
-	./watcher-server serve --port 8080
+	./watcher-server run --port 8080
 
 # === 클라이언트 키 관리 테스트 ===
 test-key-gen:
@@ -139,7 +139,7 @@ test-yaml:
 test-auth: build test-auth-setup
 	@echo ""
 	@echo "Starting server in background..."
-	@./watcher-server serve > /dev/null 2>&1 & echo $$! > /tmp/watcher_server.pid
+	@./watcher-server run > /dev/null 2>&1 & echo $$! > /tmp/watcher_server.pid
 	@sleep 2
 	@echo ""
 	@echo "Running authenticated request..."

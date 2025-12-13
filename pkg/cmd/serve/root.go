@@ -19,6 +19,6 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(ServeCmd)
+	rootCmd.AddCommand(RunCmd)
 	rootCmd.AddCommand(keyCmd)
 }
