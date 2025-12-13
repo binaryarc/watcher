@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/binaryarc/watcher/internal/auth"
-	grpc "github.com/binaryarc/watcher/internal/grpcserver"
+	"github.com/binaryarc/watcher/internal/grpcserver"
 	"github.com/binaryarc/watcher/internal/keystore"
 	"github.com/binaryarc/watcher/proto"
 	"github.com/spf13/cobra"
@@ -85,7 +85,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	watcherServer := grpc.NewWatcherServer()
+	watcherServer := grpcserver.NewWatcherServer()
 	proto.RegisterWatcherServiceServer(grpcServer, watcherServer)
 	reflection.Register(grpcServer)
 

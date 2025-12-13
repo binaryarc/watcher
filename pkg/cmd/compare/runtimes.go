@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/binaryarc/watcher/internal/detector"
 	"github.com/binaryarc/watcher/internal/grpcclient"
@@ -33,6 +34,8 @@ type ServerRuntimes struct {
 	Runtimes map[string]*detector.Runtime
 	Error    error
 }
+
+const hostRequestTimeout = 10 * time.Second
 
 func runCompareRuntimes(cmd *cobra.Command, args []string) {
 	hosts, _ := cmd.Flags().GetStringSlice("hosts")
@@ -113,7 +116,9 @@ func fetchAllServers(hosts []string, apiKey string, outputFmt string) []ServerRu
 			}
 			defer client.Close()
 
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), hostRequestTimeout)
+			defer cancel()
+
 			runtimes, err := client.ObserveRuntimes(ctx)
 			if err != nil {
 				results[index] = ServerRuntimes{
