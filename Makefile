@@ -15,22 +15,22 @@ proto:
 build:
 	@echo "Building binaries..."
 	@go build -o wctl ./cmd/wctl
-	@go build -o watcher-server ./cmd/watcher-server
+	@go build -o wsctl ./cmd/wsctl
 	@echo "Build complete!"
 	@echo "  wctl binary created"
-	@echo "  watcher-server binary created"
+	@echo "  wsctl binary created"
 
 # 빌드 (verbose)
 build-verbose:
 	@echo "Building binaries (verbose)..."
 	go build -v -o wctl ./cmd/wctl
-	go build -v -o watcher-server ./cmd/watcher-server
+	go build -v -o wsctl ./cmd/wsctl
 	@echo "Build complete!"
 
 # 클린
 clean:
 	@echo "Cleaning up..."
-	@rm -f wctl watcher-server
+	@rm -f wctl wsctl
 	@echo "Clean complete!"
 
 # 클린 (키 파일 포함)
@@ -42,35 +42,31 @@ clean-all: clean
 # 서버 실행
 run-server:
 	@echo "Starting Watcher server..."
-	./watcher-server run
+	./wsctl run
 
 # 서버 실행 (인증 비활성화 - 테스트용)
 run-server-noauth:
 	@echo "Starting Watcher server (auth disabled)..."
-	./watcher-server run --disable-auth
+	./wsctl run --disable-auth
 
 # 서버 실행 (커스텀 포트)
 run-server-custom:
 	@echo "Starting Watcher server on port 8080..."
-	./watcher-server run --port 8080
+	./wsctl run --port 8080
 
 # === 클라이언트 키 관리 테스트 ===
 test-key-gen:
 	@echo "Generating API key..."
 	./wctl key generate
 
-test-key-list:
-	@echo "Listing API keys..."
-	./wctl key list
-
-test-key-show:
-	@echo "Showing default API key..."
-	./wctl key show
+test-key-get:
+	@echo "Getting API key..."
+	./wctl get key
 
 # === 서버 키 관리 테스트 ===
-test-server-key-list:
-	@echo "Listing server API keys..."
-	./watcher-server key list
+test-server-keys-get:
+	@echo "Getting server API keys..."
+	./wsctl get keys
 
 # === 인증 플로우 테스트 ===
 test-auth-setup:
@@ -83,7 +79,7 @@ test-auth-setup:
 	echo "   Key: $$API_KEY"; \
 	echo ""; \
 	echo "3. Adding key to server..."; \
-	./watcher-server key add "$$API_KEY" "Test key"
+	./wsctl add key "$$API_KEY" "Test key"
 	@echo ""
 	@echo "Auth setup complete!"
 	@echo "   Now start server with: make run-server"
@@ -91,55 +87,47 @@ test-auth-setup:
 
 test-auth-teardown:
 	@echo "Cleaning up auth test..."
-	./watcher-server key clear
+	./wsctl clear keys <<< "yes"
 	@rm -f /tmp/watcher_key.txt
 	@echo "Auth teardown complete!"
 
-# === 기존 테스트 (인증 포함) ===
-# 로컬 테스트
+# === 기존 테스트 ===
 test-local:
 	@echo "Testing local observation..."
 	@./wctl get runtimes
 	@echo ""
 	@./wctl get runtime java
 
-# 원격 테스트 (인증 사용)
 test-remote:
 	@echo "Testing remote observation (with auth)..."
 	@./wctl get runtimes --host localhost:9090
 	@echo ""
 	@./wctl get runtime java --host localhost:9090
 
-# 원격 테스트 (인증 없이)
 test-remote-noauth:
 	@echo "Testing remote observation (no auth)..."
 	@./wctl get runtimes --host localhost:9090 --api-key ""
 
-# 멀티 서버 비교 테스트
 test-compare:
 	@echo "Testing multi-server comparison..."
 	@./wctl compare runtimes --hosts localhost:9090,localhost:9091
 
-# 멀티 서버 비교 - JSON 출력
 test-compare-json:
 	@echo "Testing comparison with JSON output..."
 	@./wctl compare runtimes --hosts localhost:9090,localhost:9091 -o json
 
-# JSON 출력 테스트
 test-json:
 	@echo "Testing JSON output..."
 	@./wctl get runtimes -o json
 
-# YAML 출력 테스트
 test-yaml:
 	@echo "Testing YAML output..."
 	@./wctl get runtimes -o yaml
 
-# 전체 인증 플로우 테스트
 test-auth: build test-auth-setup
 	@echo ""
 	@echo "Starting server in background..."
-	@./watcher-server run > /dev/null 2>&1 & echo $$! > /tmp/watcher_server.pid
+	@./wsctl run > /dev/null 2>&1 & echo $$! > /tmp/watcher_server.pid
 	@sleep 2
 	@echo ""
 	@echo "Running authenticated request..."
@@ -156,7 +144,7 @@ help:
 	@echo "Watcher Makefile Commands:"
 	@echo ""
 	@echo "Build & Clean:"
-	@echo "  make build              - Build wctl and watcher-server binaries"
+	@echo "  make build              - Build wctl and wsctl binaries"
 	@echo "  make build-verbose      - Build with verbose output"
 	@echo "  make proto              - Generate proto files"
 	@echo "  make clean              - Remove built binaries"
@@ -168,12 +156,11 @@ help:
 	@echo "  make run-server-custom  - Start server on custom port"
 	@echo ""
 	@echo "Key Management (Client):"
-	@echo "  make test-key-gen       - Generate a new API key"
-	@echo "  make test-key-list      - List all client keys"
-	@echo "  make test-key-show      - Show default key"
+	@echo "  make test-key-gen       - Generate API key"
+	@echo "  make test-key-get       - Get current API key"
 	@echo ""
 	@echo "Key Management (Server):"
-	@echo "  make test-server-key-list - List all server keys"
+	@echo "  make test-server-keys-get - Get all server keys"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test-local         - Test local runtime observation"

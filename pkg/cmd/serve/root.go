@@ -7,9 +7,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "watcher-server",
-	Short: "Watcher Server",
-	Long:  `Watcher gRPC server for remote runtime observation`,
+	Use:   "wsctl",
+	Short: "Watcher Server Control",
+	Long:  `Control tool for Watcher gRPC server`,
 }
 
 func Execute() {
@@ -20,5 +20,8 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(RunCmd)
-	rootCmd.AddCommand(keyCmd)
+	rootCmd.AddCommand(getCmd)
+	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(clearCmd)
 }
