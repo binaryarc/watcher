@@ -124,6 +124,12 @@ Generate and store a key:
 wctl key generate
 ```
 
+Print the currently saved key:
+
+```bash
+wctl get key
+```
+
 Keys load automatically in this order:
 
 1. `--api-key` flag
