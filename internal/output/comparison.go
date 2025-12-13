@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"gopkg.in/yaml.v3"
 )
 
@@ -24,6 +25,9 @@ type RuntimeComparison struct {
 // PrintComparisonTable prints runtime comparison in table format
 func PrintComparisonTable(comparison *ComparisonData) {
 	table := tablewriter.NewWriter(os.Stdout)
+	table.Configure(func(cfg *tablewriter.Config) {
+		cfg.Header.Formatting.AutoFormat = tw.Off
+	})
 
 	// Build header: Runtime | Host1 | Host2 | ... | Status
 	header := []string{"Runtime"}
@@ -42,19 +46,22 @@ func PrintComparisonTable(comparison *ComparisonData) {
 	table.Render()
 }
 
-// formatStatus adds emoji to status
+func color(s, code string) string {
+	return "\033[" + code + "m" + s + "\033[0m"
+}
+
 func formatStatus(status string) string {
 	switch status {
 	case "SAME":
-		return "✅ SAME"
+		return color("SAME", "32") // green
 	case "DIFF":
-		return "⚠️  DIFF"
+		return color("DIFF", "33") // yellow
 	case "PARTIAL":
-		return "⚠️  PARTIAL"
+		return color("PARTIAL", "33")
 	case "MISSING":
-		return "❌ MISSING"
+		return color("MISSING", "31") // red
 	case "ERROR":
-		return "❌ ERROR"
+		return color("ERROR", "31")
 	default:
 		return status
 	}
