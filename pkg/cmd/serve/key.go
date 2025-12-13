@@ -84,11 +84,11 @@ func runKeyAdd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to add key: %w", err)
 	}
 
-	fmt.Println("✅ API key added successfully")
+	fmt.Println("API key added successfully")
 	if description != "" {
-		fmt.Printf("   Description: %s\n", description)
+		fmt.Printf("Description: %s\n", description)
 	}
-	fmt.Printf("   Key: %s\n", maskKey(apiKey))
+	fmt.Printf("Key: %s\n", maskKey(apiKey))
 
 	return nil
 }
@@ -105,8 +105,8 @@ func runKeyRemove(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to remove key: %w", err)
 	}
 
-	fmt.Println("✅ API key removed successfully")
-	fmt.Printf("   Key: %s\n", maskKey(apiKey))
+	fmt.Println("API key removed successfully")
+	fmt.Printf("Key: %s\n", maskKey(apiKey))
 
 	return nil
 }
@@ -121,7 +121,8 @@ func runKeyList(cmd *cobra.Command, args []string) error {
 
 	if len(keys) == 0 {
 		fmt.Println("No API keys registered")
-		fmt.Println("\nAdd a key with:")
+		fmt.Println()
+		fmt.Println("Add a key with:")
 		fmt.Println("   watcher-server key add <api-key> \"<description>\"")
 		return nil
 	}
@@ -149,8 +150,7 @@ func runKeyClear(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Confirmation
-	fmt.Print("⚠️  Are you sure you want to remove ALL API keys? (yes/no): ")
+	fmt.Print("Are you sure you want to remove ALL API keys? (yes/no): ")
 	var response string
 	fmt.Scanln(&response)
 
@@ -163,12 +163,11 @@ func runKeyClear(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to clear keys: %w", err)
 	}
 
-	fmt.Println("✅ All API keys removed")
+	fmt.Println("All API keys removed")
 
 	return nil
 }
 
-// maskKey masks the API key for display (shows first 10 and last 4 chars)
 func maskKey(key string) string {
 	if len(key) <= 14 {
 		return key

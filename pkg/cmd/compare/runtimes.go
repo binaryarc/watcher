@@ -28,7 +28,6 @@ func init() {
 	runtimesCmd.MarkFlagRequired("hosts")
 }
 
-// ServerRuntimes holds runtime information for a single server
 type ServerRuntimes struct {
 	Host     string
 	Runtimes map[string]*detector.Runtime
@@ -40,16 +39,15 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 	outputFmt, _ := cmd.Flags().GetString("output")
 
 	if len(hosts) == 0 {
-		fmt.Println("❌ Error: --hosts flag is required")
+		fmt.Println("Error: --hosts flag is required")
 		fmt.Println("Example: wctl compare runtimes --hosts server1:9090,server2:9090")
 		return
 	}
 
 	if outputFmt == "table" {
-		fmt.Printf("🌐 Comparing runtimes across %d server(s)...\n\n", len(hosts))
+		fmt.Printf("Comparing runtimes across %d server(s)...\n\n", len(hosts))
 	}
 
-	// API 키 가져오기
 	apiKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
 
 	serverResults := fetchAllServers(hosts, apiKey, outputFmt)
@@ -58,7 +56,7 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 	for _, result := range serverResults {
 		if result.Error != nil {
 			if outputFmt == "table" {
-				fmt.Printf("⚠️  Failed to connect to %s: %v\n", result.Host, result.Error)
+				fmt.Printf("Warning: Failed to connect to %s: %v\n", result.Host, result.Error)
 			}
 		} else {
 			successfulServers = append(successfulServers, result)
@@ -66,7 +64,7 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 	}
 
 	if len(successfulServers) == 0 {
-		fmt.Println("\n❌ Failed to connect to all servers")
+		fmt.Println("\nFailed to connect to all servers")
 		return
 	}
 
@@ -158,7 +156,7 @@ func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
 			} else if rt, found := server.Runtimes[name]; found {
 				versions[i] = rt.Version
 			} else {
-				versions[i] = "-"
+				versions[i] = "x"
 			}
 		}
 
@@ -197,7 +195,7 @@ func determineStatus(versions []string) string {
 	errorCount := 0
 
 	for _, v := range versions {
-		if v == "-" {
+		if v == "x" {
 			emptyCount++
 		} else if v == "ERROR" {
 			errorCount++
@@ -241,11 +239,11 @@ func printSummary(comparison *output.ComparisonData) {
 		}
 	}
 
-	fmt.Println("\n📊 Summary:")
-	fmt.Printf("   • %d server(s) compared\n", len(comparison.Hosts))
-	fmt.Printf("   • %d runtime(s) with differences\n", diffCount)
+	fmt.Println("\nSummary:")
+	fmt.Printf("  %d server(s) compared\n", len(comparison.Hosts))
+	fmt.Printf("  %d runtime(s) with differences\n", diffCount)
 	if partialCount > 0 {
-		fmt.Printf("   • %d runtime(s) partially installed\n", partialCount)
+		fmt.Printf("  %d runtime(s) partially installed\n", partialCount)
 	}
-	fmt.Printf("   • %d runtime(s) consistent\n", sameCount)
+	fmt.Printf("  %d runtime(s) consistent\n", sameCount)
 }

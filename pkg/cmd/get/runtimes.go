@@ -30,11 +30,10 @@ func runGetRuntimes(c *cobra.Command, args []string) {
 	var err error
 
 	if host != "" {
-		// API 키를 PersistentFlags에서 가져오기
 		apiKey, _ := c.Root().PersistentFlags().GetString("api-key")
 		runtimes, err = observeRemoteRuntimes(host, apiKey, outputFormat)
 		if err != nil {
-			fmt.Printf("❌ Failed to observe remote server: %v\n", err)
+			fmt.Printf("Failed to observe remote server: %v\n", err)
 			return
 		}
 	} else {
@@ -43,7 +42,7 @@ func runGetRuntimes(c *cobra.Command, args []string) {
 
 	if len(runtimes) == 0 {
 		if outputFormat == "table" {
-			fmt.Println("❌ No runtimes detected.")
+			fmt.Println("No runtimes detected.")
 		}
 		return
 	}
@@ -59,7 +58,7 @@ func runGetRuntimes(c *cobra.Command, args []string) {
 		}
 	case "table":
 		output.PrintRuntimesTable(runtimes)
-		fmt.Printf("\n📊 Total: %d runtime(s) detected\n", len(runtimes))
+		fmt.Printf("\nTotal: %d runtime(s) detected\n", len(runtimes))
 	default:
 		fmt.Printf("Unknown output format: %s\n", outputFormat)
 		fmt.Println("Supported formats: table, json, yaml")
@@ -68,7 +67,7 @@ func runGetRuntimes(c *cobra.Command, args []string) {
 
 func observeLocalRuntimes(outputFormat string) []*detector.Runtime {
 	if outputFormat == "table" {
-		fmt.Println("👁️  Observing local runtimes...\n")
+		fmt.Println("Observing local runtimes...\n")
 	}
 
 	detectors := detector.GetAllDetectors()
@@ -78,7 +77,7 @@ func observeLocalRuntimes(outputFormat string) []*detector.Runtime {
 		runtime, err := det.Detect()
 		if err != nil {
 			if outputFormat == "table" {
-				fmt.Printf("⚠️  Error detecting %s: %v\n", det.Name(), err)
+				fmt.Printf("Warning: Error detecting %s: %v\n", det.Name(), err)
 			}
 			continue
 		}
@@ -93,7 +92,7 @@ func observeLocalRuntimes(outputFormat string) []*detector.Runtime {
 
 func observeRemoteRuntimes(host string, apiKey string, outputFormat string) ([]*detector.Runtime, error) {
 	if outputFormat == "table" {
-		fmt.Printf("🌐 Connecting to remote server: %s...\n\n", host)
+		fmt.Printf("Connecting to remote server: %s...\n\n", host)
 	}
 
 	client, err := grpcclient.NewClient(host, apiKey)

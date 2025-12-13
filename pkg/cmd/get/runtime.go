@@ -32,11 +32,10 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 	var err error
 
 	if host != "" {
-		// API 키 가져오기
 		apiKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
 		runtime, err = observeRemoteRuntime(host, apiKey, runtimeName, outputFormat)
 		if err != nil {
-			fmt.Printf("❌ Failed to observe remote server: %v\n", err)
+			fmt.Printf("Failed to observe remote server: %v\n", err)
 			return
 		}
 	} else {
@@ -48,7 +47,7 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 
 	if runtime == nil || !runtime.Found {
 		if outputFormat == "table" {
-			fmt.Printf("❌ %s is not installed.\n", runtimeName)
+			fmt.Printf("%s is not installed.\n", runtimeName)
 		}
 		return
 	}
@@ -63,7 +62,7 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 			fmt.Printf("Error: %v\n", err)
 		}
 	case "table":
-		fmt.Printf("✅ %s detected!\n\n", runtime.Name)
+		fmt.Printf("%s detected!\n\n", runtime.Name)
 		output.PrintRuntimeTable(runtime)
 	default:
 		fmt.Printf("Unknown output format: %s\n", outputFormat)
@@ -73,7 +72,7 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 
 func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Runtime, error) {
 	if outputFormat == "table" {
-		fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
+		fmt.Printf("Observing %s runtime...\n\n", runtimeName)
 	}
 
 	var det detector.Detector
@@ -96,7 +95,7 @@ func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Run
 	case "nginx":
 		det = &detector.NginxDetector{}
 	default:
-		fmt.Printf("❌ Runtime '%s' is not supported yet.\n", runtimeName)
+		fmt.Printf("Runtime '%s' is not supported yet.\n", runtimeName)
 		fmt.Println("\nSupported runtimes:")
 		fmt.Println("  - java")
 		fmt.Println("  - python")
@@ -111,7 +110,7 @@ func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Run
 
 	runtime, err := det.Detect()
 	if err != nil {
-		fmt.Printf("❌ Error detecting %s: %v\n", runtimeName, err)
+		fmt.Printf("Error detecting %s: %v\n", runtimeName, err)
 		return nil, err
 	}
 
@@ -120,7 +119,7 @@ func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Run
 
 func observeRemoteRuntime(host string, apiKey string, runtimeName string, outputFormat string) (*detector.Runtime, error) {
 	if outputFormat == "table" {
-		fmt.Printf("🌐 Connecting to remote server: %s...\n\n", host)
+		fmt.Printf("Connecting to remote server: %s...\n\n", host)
 	}
 
 	client, err := grpcclient.NewClient(host, apiKey)

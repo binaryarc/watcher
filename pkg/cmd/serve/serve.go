@@ -39,17 +39,16 @@ func init() {
 func runServe(cmd *cobra.Command, args []string) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 
-	// Load keystore
 	keystorePath := keystorePathArg
 	if keystorePath == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Printf("❌ Failed to get home directory: %v\n", err)
+			fmt.Printf("Failed to get home directory: %v\n", err)
 			return
 		}
 		keysDir := filepath.Join(homeDir, ".watcher", "server")
 		if err := os.MkdirAll(keysDir, 0700); err != nil {
-			fmt.Printf("❌ Failed to create keys directory: %v\n", err)
+			fmt.Printf("Failed to create keys directory: %v\n", err)
 			return
 		}
 		keystorePath = filepath.Join(keysDir, "keys.json")
@@ -57,22 +56,21 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	store, err := keystore.NewStore(keystorePath)
 	if err != nil {
-		fmt.Printf("❌ Failed to load keystore: %v\n", err)
+		fmt.Printf("Failed to load keystore: %v\n", err)
 		return
 	}
 
-	// Create gRPC server with authentication
 	var grpcServer *grpcLib.Server
 	if disableAuth {
-		fmt.Println("⚠️  Authentication DISABLED - not recommended for production")
+		fmt.Println("WARNING: Authentication DISABLED - not recommended for production")
 		grpcServer = grpcLib.NewServer()
 	} else {
 		if store.IsEmpty() {
-			fmt.Println("⚠️  No API keys registered - authentication is effectively disabled")
-			fmt.Println("   Add keys with: watcher-server key add <api-key> \"<description>\"")
+			fmt.Println("WARNING: No API keys registered - all requests will be rejected")
+			fmt.Println("Add keys with: watcher-server key add <api-key> \"<description>\"")
 		} else {
 			keyCount := len(store.List())
-			fmt.Printf("✅ Authentication enabled (%d key(s) registered)\n", keyCount)
+			fmt.Printf("Authentication enabled (%d key(s) registered)\n", keyCount)
 		}
 
 		grpcServer = grpcLib.NewServer(
@@ -83,7 +81,7 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		fmt.Printf("❌ Failed to listen on %s: %v\n", addr, err)
+		fmt.Printf("Failed to listen on %s: %v\n", addr, err)
 		return
 	}
 
@@ -91,10 +89,10 @@ func runServe(cmd *cobra.Command, args []string) {
 	proto.RegisterWatcherServiceServer(grpcServer, watcherServer)
 	reflection.Register(grpcServer)
 
-	fmt.Printf("👁️  Watcher server listening on %s...\n", addr)
+	fmt.Printf("Watcher server listening on %s...\n", addr)
 	fmt.Println("Press Ctrl+C to stop")
 
 	if err := grpcServer.Serve(listener); err != nil {
-		fmt.Printf("❌ Failed to serve: %v\n", err)
+		fmt.Printf("Failed to serve: %v\n", err)
 	}
 }
