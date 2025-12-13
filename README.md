@@ -54,6 +54,19 @@ python   3.10.12   /usr/bin/python3
 docker   24.0.5    /usr/bin/docker
 ```
 
+Multi-server comparison (table output):
+```
+┌─────────┬───────────┬───────────┬─────────┐
+│ RUNTIME │ SERVER-1  │ SERVER-2  │ STATUS  │
+├─────────┼───────────┼───────────┼─────────┤
+│ python  │ 3.10.12   │ 3.10.12   │ SAME    │
+│ go      │ 1.25.5    │ 1.25.5    │ SAME    │
+│ docker  │ x         │ 27.5.1    │ PARTIAL │
+│ java    │ 17.0.17   │ x         │ PARTIAL │
+│ node    │ 20.18.0   │ x         │ PARTIAL │
+└─────────┴───────────┴───────────┴─────────┘
+```
+
 ## How it works
 ```
 wctl (client) ---gRPC:9090---> wsctl (server)
@@ -131,6 +144,7 @@ Adding new runtime detector:
 - [ ] Better error handling for network failures
 - [ ] Tests
 - [ ] Config file support
+- [ ] Command auto-completion (bash/zsh/fish)
 
 ## Why "watcher"?
 
