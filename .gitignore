@@ -27,6 +27,7 @@ vendor/
 
 # Binary files (루트 디렉토리의 바이너리만)
 /wctl
+/wsctl
 /watcher-server
 /watcher-client
 
