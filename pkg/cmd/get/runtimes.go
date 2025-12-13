@@ -22,23 +22,22 @@ func init() {
 	runtimesCmd.Flags().String("host", "", "Remote server address (e.g., server:9090)")
 }
 
-func runGetRuntimes(cmd *cobra.Command, args []string) {
-	outputFormat, _ := cmd.Flags().GetString("output")
-	host, _ := cmd.Flags().GetString("host")
+func runGetRuntimes(c *cobra.Command, args []string) {
+	outputFormat, _ := c.Flags().GetString("output")
+	host, _ := c.Flags().GetString("host")
 
 	var runtimes []*detector.Runtime
 	var err error
 
-	// Remote vs Local detection
 	if host != "" {
-		// Remote observation via gRPC
-		runtimes, err = observeRemoteRuntimes(host, outputFormat)
+		// API 키를 PersistentFlags에서 가져오기
+		apiKey, _ := c.Root().PersistentFlags().GetString("api-key")
+		runtimes, err = observeRemoteRuntimes(host, apiKey, outputFormat)
 		if err != nil {
 			fmt.Printf("❌ Failed to observe remote server: %v\n", err)
 			return
 		}
 	} else {
-		// Local detection
 		runtimes = observeLocalRuntimes(outputFormat)
 	}
 
@@ -49,7 +48,6 @@ func runGetRuntimes(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// Output formatting
 	switch outputFormat {
 	case "json":
 		if err := output.PrintRuntimesJSON(runtimes); err != nil {
@@ -93,20 +91,17 @@ func observeLocalRuntimes(outputFormat string) []*detector.Runtime {
 	return runtimes
 }
 
-// observeRemoteRuntimes fetches runtime info from remote server via gRPC
-func observeRemoteRuntimes(host string, outputFormat string) ([]*detector.Runtime, error) {
+func observeRemoteRuntimes(host string, apiKey string, outputFormat string) ([]*detector.Runtime, error) {
 	if outputFormat == "table" {
 		fmt.Printf("🌐 Connecting to remote server: %s...\n\n", host)
 	}
 
-	// Create gRPC client
-	client, err := grpcclient.NewClient(host)
+	client, err := grpcclient.NewClient(host, apiKey)
 	if err != nil {
 		return nil, err
 	}
 	defer client.Close()
 
-	// Fetch runtimes
 	ctx := context.Background()
 	runtimes, err := client.ObserveRuntimes(ctx)
 	if err != nil {

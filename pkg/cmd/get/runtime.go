@@ -31,16 +31,15 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 	var runtime *detector.Runtime
 	var err error
 
-	// Remote vs Local detection
 	if host != "" {
-		// Remote observation via gRPC
-		runtime, err = observeRemoteRuntime(host, runtimeName, outputFormat)
+		// API 키 가져오기
+		apiKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
+		runtime, err = observeRemoteRuntime(host, apiKey, runtimeName, outputFormat)
 		if err != nil {
 			fmt.Printf("❌ Failed to observe remote server: %v\n", err)
 			return
 		}
 	} else {
-		// Local detection
 		runtime, err = observeLocalRuntime(runtimeName, outputFormat)
 		if err != nil {
 			return
@@ -54,7 +53,6 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// Output formatting
 	switch outputFormat {
 	case "json":
 		if err := output.PrintRuntimeJSON(runtime); err != nil {
@@ -73,7 +71,6 @@ func runGetRuntime(cmd *cobra.Command, args []string) {
 	}
 }
 
-// observeLocalRuntime performs local runtime detection for specific runtime
 func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Runtime, error) {
 	if outputFormat == "table" {
 		fmt.Printf("👁️  Observing %s runtime...\n\n", runtimeName)
@@ -121,20 +118,17 @@ func observeLocalRuntime(runtimeName string, outputFormat string) (*detector.Run
 	return runtime, nil
 }
 
-// observeRemoteRuntime fetches specific runtime info from remote server via gRPC
-func observeRemoteRuntime(host string, runtimeName string, outputFormat string) (*detector.Runtime, error) {
+func observeRemoteRuntime(host string, apiKey string, runtimeName string, outputFormat string) (*detector.Runtime, error) {
 	if outputFormat == "table" {
 		fmt.Printf("🌐 Connecting to remote server: %s...\n\n", host)
 	}
 
-	// Create gRPC client
-	client, err := grpcclient.NewClient(host)
+	client, err := grpcclient.NewClient(host, apiKey)
 	if err != nil {
 		return nil, err
 	}
 	defer client.Close()
 
-	// Fetch specific runtime
 	ctx := context.Background()
 	runtime, err := client.ObserveRuntime(ctx, runtimeName)
 	if err != nil {

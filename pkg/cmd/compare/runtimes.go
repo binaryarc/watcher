@@ -31,7 +31,7 @@ func init() {
 // ServerRuntimes holds runtime information for a single server
 type ServerRuntimes struct {
 	Host     string
-	Runtimes map[string]*detector.Runtime // key: runtime name
+	Runtimes map[string]*detector.Runtime
 	Error    error
 }
 
@@ -49,10 +49,11 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 		fmt.Printf("🌐 Comparing runtimes across %d server(s)...\n\n", len(hosts))
 	}
 
-	// Fetch runtimes from all servers in parallel
-	serverResults := fetchAllServers(hosts, outputFmt)
+	// API 키 가져오기
+	apiKey, _ := cmd.Root().PersistentFlags().GetString("api-key")
 
-	// Check for errors
+	serverResults := fetchAllServers(hosts, apiKey, outputFmt)
+
 	var successfulServers []ServerRuntimes
 	for _, result := range serverResults {
 		if result.Error != nil {
@@ -73,10 +74,8 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 		fmt.Println()
 	}
 
-	// Build comparison data
 	comparison := buildComparison(successfulServers)
 
-	// Output based on format
 	switch outputFmt {
 	case "json":
 		if err := output.PrintComparisonJSON(comparison); err != nil {
@@ -94,8 +93,7 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 	}
 }
 
-// fetchAllServers fetches runtime info from all servers in parallel
-func fetchAllServers(hosts []string, outputFmt string) []ServerRuntimes {
+func fetchAllServers(hosts []string, apiKey string, outputFmt string) []ServerRuntimes {
 	var wg sync.WaitGroup
 	results := make([]ServerRuntimes, len(hosts))
 
@@ -104,8 +102,7 @@ func fetchAllServers(hosts []string, outputFmt string) []ServerRuntimes {
 		go func(index int, hostAddr string) {
 			defer wg.Done()
 
-			// Connect to server
-			client, err := grpcclient.NewClient(hostAddr)
+			client, err := grpcclient.NewClient(hostAddr, apiKey)
 			if err != nil {
 				results[index] = ServerRuntimes{
 					Host:  hostAddr,
@@ -115,7 +112,6 @@ func fetchAllServers(hosts []string, outputFmt string) []ServerRuntimes {
 			}
 			defer client.Close()
 
-			// Fetch runtimes
 			ctx := context.Background()
 			runtimes, err := client.ObserveRuntimes(ctx)
 			if err != nil {
@@ -126,7 +122,6 @@ func fetchAllServers(hosts []string, outputFmt string) []ServerRuntimes {
 				return
 			}
 
-			// Convert to map for easier lookup
 			runtimeMap := make(map[string]*detector.Runtime)
 			for _, rt := range runtimes {
 				runtimeMap[rt.Name] = rt
@@ -144,25 +139,22 @@ func fetchAllServers(hosts []string, outputFmt string) []ServerRuntimes {
 	return results
 }
 
-// buildComparison builds the comparison data structure
 func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
-	// Collect all unique runtime names
 	runtimeNames := make(map[string]bool)
 	for _, server := range serverResults {
-		if server.Error == nil { // 성공한 서버만
+		if server.Error == nil {
 			for name := range server.Runtimes {
 				runtimeNames[name] = true
 			}
 		}
 	}
 
-	// Build comparison for each runtime
 	var runtimeComparisons []output.RuntimeComparison
 	for name := range runtimeNames {
 		versions := make([]string, len(serverResults))
 		for i, server := range serverResults {
 			if server.Error != nil {
-				versions[i] = "ERROR" // 연결 실패 표시
+				versions[i] = "ERROR"
 			} else if rt, found := server.Runtimes[name]; found {
 				versions[i] = rt.Version
 			} else {
@@ -170,7 +162,6 @@ func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
 			}
 		}
 
-		// Determine status
 		status := determineStatus(versions)
 
 		runtimeComparisons = append(runtimeComparisons, output.RuntimeComparison{
@@ -180,10 +171,8 @@ func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
 		})
 	}
 
-	// Extract host names (모든 서버 포함, 실패한 것도)
 	hosts := make([]string, len(serverResults))
 	for i, server := range serverResults {
-		// Extract just the hostname (without port) for display
 		hostParts := strings.Split(server.Host, ":")
 		if server.Error != nil {
 			hosts[i] = hostParts[0] + " (ERR)"
@@ -198,13 +187,11 @@ func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
 	}
 }
 
-// determineStatus determines if versions are same, different, or partial
 func determineStatus(versions []string) string {
 	if len(versions) == 0 {
 		return "UNKNOWN"
 	}
 
-	// Count non-empty versions
 	nonEmptyVersions := make(map[string]int)
 	emptyCount := 0
 	errorCount := 0
@@ -219,31 +206,25 @@ func determineStatus(versions []string) string {
 		}
 	}
 
-	// Has errors
 	if errorCount > 0 {
 		return "ERROR"
 	}
 
-	// All missing
 	if emptyCount == len(versions) {
 		return "MISSING"
 	}
 
-	// Some missing (partial)
 	if emptyCount > 0 {
 		return "PARTIAL"
 	}
 
-	// All same version
 	if len(nonEmptyVersions) == 1 {
 		return "SAME"
 	}
 
-	// Different versions
 	return "DIFF"
 }
 
-// printSummary prints a summary of the comparison
 func printSummary(comparison *output.ComparisonData) {
 	sameCount := 0
 	diffCount := 0
