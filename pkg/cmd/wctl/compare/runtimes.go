@@ -90,7 +90,6 @@ func runCompareRuntimes(cmd *cobra.Command, args []string) {
 		}
 	case "table":
 		output.PrintComparisonTable(comparison)
-		printSummary(comparison)
 	default:
 		fmt.Printf("Unknown output format: %s\n", outputFmt)
 	}
@@ -194,56 +193,40 @@ func buildComparison(serverResults []ServerRuntimes) *output.ComparisonData {
 
 func determineStatus(versions []string) string {
 	if len(versions) == 0 {
-		return "UNKNOWN"
+		return "MISSING"
 	}
 
-	baseVersion := ""
+	uniqueVersions := make(map[string]struct{})
+	hasVersion := false
+	hasMissing := false
+
 	for _, version := range versions {
-		if version == "ERROR" {
-			return "UNKNOWN"
-		}
-		if version == "x" {
-			continue
-		}
-		if baseVersion == "" {
-			baseVersion = version
-			continue
-		}
-		if version != baseVersion {
-			return "MISMATCH"
+		switch version {
+		case "ERROR":
+			return "ERROR"
+		case "x":
+			hasMissing = true
+		default:
+			hasVersion = true
+			uniqueVersions[version] = struct{}{}
 		}
 	}
 
-	if baseVersion == "" {
-		return "UNKNOWN"
+	if !hasVersion && hasMissing {
+		return "MISSING"
 	}
 
-	return "MATCH"
-}
-
-func printSummary(comparison *output.ComparisonData) {
-	fmt.Println()
-	fmt.Println("Summary:")
-	totalRuntimes := len(comparison.Runtimes)
-	mismatched := 0
-	unknown := 0
-
-	for _, runtime := range comparison.Runtimes {
-		switch runtime.Status {
-		case "MISMATCH":
-			mismatched++
-		case "UNKNOWN":
-			unknown++
-		}
+	if hasMissing {
+		return "PARTIAL"
 	}
 
-	fmt.Printf("- Total runtimes compared: %d\n", totalRuntimes)
-	fmt.Printf("- Matching runtimes: %d\n", totalRuntimes-mismatched-unknown)
-	fmt.Printf("- Mismatched runtimes: %d\n", mismatched)
-	fmt.Printf("- Unknown status: %d\n", unknown)
-
-	if mismatched > 0 {
-		fmt.Println("\nRecommendation:")
-		fmt.Println("- Review mismatched runtimes and plan upgrades/downgrades to standardize versions.")
+	if len(uniqueVersions) > 1 {
+		return "DIFF"
 	}
+
+	if len(uniqueVersions) == 1 {
+		return "SAME"
+	}
+
+	return "MISSING"
 }
