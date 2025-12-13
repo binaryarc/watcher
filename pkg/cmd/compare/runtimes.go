@@ -36,6 +36,9 @@ type ServerRuntimes struct {
 
 func runCompareRuntimes(cmd *cobra.Command, args []string) {
 	hosts, _ := cmd.Flags().GetStringSlice("hosts")
+	for i, host := range hosts {
+		hosts[i] = strings.TrimSpace(host)
+	}
 	outputFmt, _ := cmd.Flags().GetString("output")
 
 	if len(hosts) == 0 {
