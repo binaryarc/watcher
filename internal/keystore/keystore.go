@@ -76,9 +76,9 @@ func (s *Store) Validate(key string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// No keys stored = authentication disabled
+	// 키가 없으면 모든 요청 거부
 	if len(s.keys) == 0 {
-		return true
+		return false // 변경: true → false
 	}
 
 	for storedKey := range s.keys {
