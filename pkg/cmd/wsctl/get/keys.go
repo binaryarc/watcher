@@ -9,21 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Cmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get resources",
-	Long:  `Get registered API keys`,
-}
-
 var keysCmd = &cobra.Command{
 	Use:   "keys",
 	Short: "Get all registered API keys",
 	Long:  `List all registered API keys`,
 	RunE:  runGetKeys,
-}
-
-func init() {
-	Cmd.AddCommand(keysCmd)
 }
 
 func runGetKeys(cmd *cobra.Command, args []string) error {

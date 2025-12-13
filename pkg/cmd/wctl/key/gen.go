@@ -9,21 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Cmd = &cobra.Command{
-	Use:   "key",
-	Short: "Manage API key",
-	Long:  `Generate and view API key for authentication with watcher servers`,
-}
-
 var genCmd = &cobra.Command{
 	Use:   "gen",
 	Short: "Generate a new API key",
 	Long:  `Generate a new API key (replaces existing key)`,
 	RunE:  runGenerate,
-}
-
-func init() {
-	Cmd.AddCommand(genCmd)
 }
 
 func getKeyManager() (*keymanager.Manager, error) {

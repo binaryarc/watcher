@@ -7,21 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Cmd = &cobra.Command{
-	Use:   "clear",
-	Short: "Clear resources",
-	Long:  `Clear all API keys`,
-}
-
 var keysCmd = &cobra.Command{
 	Use:   "keys",
 	Short: "Clear all API keys",
 	Long:  `Remove all registered API keys`,
 	RunE:  runClearKeys,
-}
-
-func init() {
-	Cmd.AddCommand(keysCmd)
 }
 
 func runClearKeys(cmd *cobra.Command, args []string) error {

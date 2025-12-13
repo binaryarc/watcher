@@ -7,12 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Cmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete resources",
-	Long:  `Delete API keys`,
-}
-
 var (
 	keyName string
 )
@@ -27,7 +21,6 @@ var keyCmd = &cobra.Command{
 func init() {
 	keyCmd.Flags().StringVar(&keyName, "name", "", "API key to delete (required)")
 	keyCmd.MarkFlagRequired("name")
-	Cmd.AddCommand(keyCmd)
 }
 
 func runDeleteKey(cmd *cobra.Command, args []string) error {

@@ -13,19 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Cmd = &cobra.Command{
-	Use:   "compare",
-	Short: "Compare runtime versions across multiple servers",
-	Long: `Compare runtime versions across multiple servers to identify inconsistencies.
-
-Examples:
-  # Compare all runtimes across three servers
-  wctl compare runtimes --hosts server1:9090,server2:9090,server3:9090
-
-  # Compare with JSON output
-  wctl compare runtimes --hosts server1:9090,server2:9090 -o json`,
-}
-
 var runtimesCmd = &cobra.Command{
 	Use:   "runtimes",
 	Short: "Compare runtime versions across multiple servers",
@@ -37,7 +24,6 @@ showing which runtimes have different versions across your infrastructure.`,
 }
 
 func init() {
-	Cmd.AddCommand(runtimesCmd)
 	runtimesCmd.Flags().StringSlice("hosts", []string{}, "Comma-separated list of server addresses (required)")
 	runtimesCmd.MarkFlagRequired("hosts")
 }
