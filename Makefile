@@ -1,4 +1,4 @@
-.PHONY: proto build build-verbose clean clean-all run-server run-server-noauth run-server-custom test-local test-remote test-remote-noauth test-compare test-compare-json test-json test-yaml test-auth test-auth-setup test-auth-teardown test-key-gen test-key-get test-server-keys-get test-completion completions generate-completions help
+.PHONY: proto build build-verbose clean clean-all run-server run-server-noauth run-server-custom test-local test-remote test-remote-noauth test-compare test-compare-json test-json test-yaml test-auth test-auth-setup test-auth-teardown test-key-gen test-key-get test-server-keys-get test-completion completions generate-completions test help
 
 BIN_DIR := $(CURDIR)/bin
 COMPLETIONS_DIR := $(CURDIR)/dist/completions
@@ -174,6 +174,10 @@ test-completion:
 	@go test ./pkg/cmd/wsctl -run TestCompletionCommandGeneratesBashScript -count=1
 	@echo "Completion tests passed!"
 
+test:
+	@echo "Running full Go test suite..."
+	@go test ./...
+
 # 도움말
 help:
 	@echo "Watcher Makefile Commands:"
@@ -205,6 +209,7 @@ help:
 	@echo "  make test-json          - Test JSON output format"
 	@echo "  make test-yaml          - Test YAML output format"
 	@echo "  make test-completion    - Run shell completion tests"
+	@echo "  make test               - Run go test ./..."
 	@echo ""
 	@echo "Authentication:"
 	@echo "  make test-auth-setup    - Setup authentication test"
