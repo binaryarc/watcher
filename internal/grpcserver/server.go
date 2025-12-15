@@ -12,6 +12,8 @@ import (
 	"github.com/binaryarc/watcher/proto"
 )
 
+var detectorsProvider = detector.GetAllDetectors
+
 type WatcherServer struct {
 	proto.UnimplementedWatcherServiceServer
 }
@@ -22,7 +24,7 @@ func NewWatcherServer() *WatcherServer {
 
 func (s *WatcherServer) ObserveRuntimes(ctx context.Context, req *proto.ObserveRequest) (*proto.ObserveResponse, error) {
 	// 1. 모든 detector 가져오기
-	detectors := detector.GetAllDetectors()
+	detectors := detectorsProvider()
 
 	// 2. 필터가 있으면 적용
 	if len(req.RuntimeFilter) > 0 {
