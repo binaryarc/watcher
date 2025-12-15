@@ -73,10 +73,10 @@ cd watcher
 make build
 ```
 
-This produces:
+This produces binaries under `./bin` (already added to `PATH` when you use the Makefile):
 
-- `wctl` — client CLI
-- `wsctl` — server CLI
+- `bin/wctl` — client CLI
+- `bin/wsctl` — server CLI
 
 ---
 
@@ -217,6 +217,60 @@ internal/
   grpcclient/     client wrapper
   grpcserver/     server implementation
 proto/            gRPC definitions
+```
+
+---
+
+## Shell completion
+
+`make build` now places the binaries in `./bin` **and** refreshes completion scripts under `dist/completions`. Copy or source the files that match your shell, or regenerate them manually:
+
+```bash
+bin/wctl completion bash > /etc/bash_completion.d/wctl
+bin/wsctl completion bash > /etc/bash_completion.d/wsctl
+```
+
+For zsh/fish/PowerShell, replace `bash` with the shell name. Reload your shell session to activate the completions.
+
+To regenerate scripts without rebuilding the binaries (e.g., during development), use:
+
+```bash
+make completions
+ls dist/completions
+```
+
+The generated files (e.g., `dist/completions/wctl.bash`, `dist/completions/wsctl.ps1`) can be copied into system-wide completion folders or sourced directly.
+
+### Quick enable per shell
+
+After `make build`, load the completions in your current shell session (replace with your shell of choice). Add the same commands to `~/.bashrc`, `~/.zshrc`, `config.fish`, or `Microsoft.PowerShell_profile.ps1` to make it persistent.
+
+**bash**
+```bash
+export PATH="$PWD/bin:$PATH"
+source dist/completions/wctl.bash
+source dist/completions/wsctl.bash   # optional
+```
+
+**zsh**
+```zsh
+export PATH="$PWD/bin:$PATH"
+source dist/completions/wctl.zsh
+source dist/completions/wsctl.zsh    # optional
+```
+
+**fish**
+```fish
+set -x PATH $PWD/bin $PATH
+source dist/completions/wctl.fish
+source dist/completions/wsctl.fish   # optional
+```
+
+**PowerShell**
+```powershell
+$env:PATH = "$PWD\bin;$env:PATH"
+. ./dist/completions/wctl.ps1
+. ./dist/completions/wsctl.ps1       # optional
 ```
 
 ---
