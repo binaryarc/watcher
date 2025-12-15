@@ -10,6 +10,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	detectorsProvider = detector.GetAllDetectors
+	grpcClientFactory = func(host, apiKey string) (grpcRuntimeClient, error) {
+		return grpcclient.NewClient(host, apiKey)
+	}
+)
+
+type grpcRuntimeClient interface {
+	ObserveRuntimes(ctx context.Context) ([]*detector.Runtime, error)
+	Close() error
+}
+
 var runtimesCmd = &cobra.Command{
 	Use:   "runtimes",
 	Short: "Get all detected runtimes",
@@ -71,7 +83,7 @@ func observeLocalRuntimes(outputFormat string) []*detector.Runtime {
 		fmt.Println()
 	}
 
-	detectors := detector.GetAllDetectors()
+	detectors := detectorsProvider()
 	var runtimes []*detector.Runtime
 
 	for _, det := range detectors {
@@ -96,7 +108,7 @@ func observeRemoteRuntimes(host string, apiKey string, outputFormat string) ([]*
 		fmt.Printf("Connecting to remote server: %s...\n\n", host)
 	}
 
-	client, err := grpcclient.NewClient(host, apiKey)
+	client, err := grpcClientFactory(host, apiKey)
 	if err != nil {
 		return nil, err
 	}
